@@ -34,7 +34,10 @@ protected:
 
 private:
     void update_bars();
+    void clamp_scroll();
     [[nodiscard]] RectI viewport_rect() const;
+    [[nodiscard]] bool  needs_vbar() const;
+    [[nodiscard]] bool  needs_hbar() const;
 
     Widget*      content_{nullptr};
     PointI       scroll_pos_{0, 0};

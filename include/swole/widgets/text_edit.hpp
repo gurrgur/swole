@@ -64,8 +64,12 @@ protected:
 private:
     void insert_at_cursor(std::string_view s);
     void delete_selection();
+    void ensure_cursor_visible();
     int  pos_from_point(PointF p) const;
     RectF cursor_rect() const;
+    void start_blink();
+    void rearm_blink();
+    void stop_blink();
 
     std::string   text_;
     std::string   placeholder_;
@@ -75,10 +79,11 @@ private:
     TextEditMode  mode_{TextEditMode::SingleLine};
     int           cursor_pos_{0};
     int           sel_start_{0}, sel_end_{0};
-    int           scroll_offset_{0};   // pixels scrolled horizontally
-    int           max_length_{-1};     // -1 = unlimited
+    int           scroll_offset_{0};
+    int           max_length_{-1};
     bool          read_only_{false};
     bool          cursor_blink_{false};
+    bool          mouse_selecting_{false};
     uint32_t      cursor_timer_id_{0};
 };
 

@@ -42,10 +42,20 @@ add_library(swole STATIC
 
     # widgets
     src/widgets/button.cpp
+    src/widgets/combo_box.cpp
     src/widgets/label.cpp
+    src/widgets/list_box.cpp
+    src/widgets/list_view.cpp
+    src/widgets/progress_bar.cpp
+    src/widgets/scroll_area.cpp
+    src/widgets/slider.cpp
+    src/widgets/tab_widget.cpp
+    src/widgets/text_edit.cpp
+    src/widgets/tree_view.cpp
 
     # layout
     src/layout/box_layout.cpp
+    src/layout/grid_layout.cpp
 )
 
 add_library(swole::swole ALIAS swole)

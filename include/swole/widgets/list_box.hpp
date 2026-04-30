@@ -12,7 +12,8 @@ struct ListItem {
     std::string text;
     void*       user_data{nullptr};
     bool        enabled{true};
-    bool        separator{false}; // renders as a horizontal rule
+    bool        selected{false};
+    bool        separator{false};
 };
 
 class ListBox : public Widget {

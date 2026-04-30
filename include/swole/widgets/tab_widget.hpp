@@ -37,7 +37,8 @@ private:
     [[nodiscard]] RectI tab_rect(int index) const;
     [[nodiscard]] RectI page_rect() const;
 
-    struct Tab { std::string title; std::unique_ptr<Widget> page; };
+    // page is a non-owning view into children_ (Widget owns via unique_ptr there)
+    struct Tab { std::string title; Widget* page{nullptr}; };
     std::vector<Tab> tabs_;
     int  current_{-1};
     int  tab_bar_height_{28};

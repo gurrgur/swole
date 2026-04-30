@@ -76,6 +76,7 @@ public:
 protected:
     void on_paint(Canvas& canvas) override;
     void on_mouse_press(const MouseEvent& e) override;
+    void on_mouse_release(const MouseEvent& e) override;
     void on_mouse_move(const MouseEvent& e) override;
     void on_double_click(const MouseEvent& e) override;
     void on_key_press(const KeyEvent& e) override;
@@ -87,6 +88,7 @@ private:
     [[nodiscard]] RectI cell_rect(int row, int col) const;
     [[nodiscard]] int   row_at(PointI p) const;
     [[nodiscard]] int   col_at_x(int x) const;
+    [[nodiscard]] int   total_col_width() const;
 
     std::vector<ListViewColumn> columns_;
     std::vector<ListViewItem>   items_;
