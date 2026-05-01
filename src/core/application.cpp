@@ -107,18 +107,17 @@ int Application::run() {
                          : int(std::max(uint64_t(0), next - now));
         wait_ms = std::clamp(wait_ms, 0, 16); // cap at one frame
 
-        // Wait for an event or timeout.
-        SDL_WaitEventTimeout(&ev, wait_ms);
+        // Wait for an event or timeout, then drain all pending events.
+        if (SDL_WaitEventTimeout(&ev, wait_ms)) {
+            do {
+                if (ev.type == SDL_EVENT_QUIT) { quit(); break; }
+                if (ev.type == impl_->wakeup_event) continue; // just a wakeup ping
 
-        // Drain all pending events.
-        do {
-            if (ev.type == SDL_EVENT_QUIT) { quit(); break; }
-            if (ev.type == impl_->wakeup_event) continue; // just a wakeup ping
+                for (Window* w : impl_->windows)
+                    w->process_sdl_event(&ev);
 
-            for (Window* w : impl_->windows)
-                w->process_sdl_event(&ev);
-
-        } while (SDL_PollEvent(&ev));
+            } while (SDL_PollEvent(&ev));
+        }
 
         // Repaint all visible windows every frame so tooltip timers fire,
         // animations run, and invalidated widgets are always flushed.

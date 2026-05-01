@@ -4,10 +4,11 @@
 // Skia GPU surface
 #include "include/gpu/ganesh/GrBackendSurface.h"
 #include "include/gpu/ganesh/GrDirectContext.h"
+#include "include/gpu/ganesh/gl/GrGLAssembleInterface.h"
 #include "include/gpu/ganesh/gl/GrGLBackendSurface.h"
 #include "include/gpu/ganesh/gl/GrGLDirectContext.h"
 #include "include/gpu/ganesh/SkSurfaceGanesh.h"
-#include "include/gpu/ganesh/gl/GrGLInterface.h"
+#include "include/core/SkColor.h"
 #include "include/core/SkSurface.h"
 #include "include/core/SkCanvas.h"
 #include "include/core/SkColorSpace.h"
@@ -25,6 +26,18 @@
 #include <vector>
 
 namespace swole {
+
+namespace {
+
+GrGLFuncPtr sdl_gl_get_proc(void*, const char name[]) {
+    return reinterpret_cast<GrGLFuncPtr>(SDL_GL_GetProcAddress(name));
+}
+
+SkColor to_sk_color(Color c) {
+    return SkColorSetARGB(c.a, c.r, c.g, c.b);
+}
+
+} // namespace
 
 struct Window::Impl {
     SDL_Window*  sdl_window{nullptr};
@@ -44,6 +57,17 @@ struct Window::Impl {
     Uint64        tooltip_arm_ms{0};    // SDL_GetTicks() when hover started (0 = not armed)
     bool          tooltip_visible{false};
     static constexpr Uint64 kTooltipDelayMs = 600;
+
+    bool configure_gl_attributes() {
+        bool ok = true;
+        ok &= SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+        ok &= SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+        ok &= SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+        ok &= SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+        ok &= SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+        if (!ok) SDL_Log("SDL_GL_SetAttribute failed: %s", SDL_GetError());
+        return ok;
+    }
 
     void arm_tooltip(const std::string& text, PointI pos) {
         if (tooltip_text == text && tooltip_arm_ms != 0) return;
@@ -91,22 +115,34 @@ struct Window::Impl {
     }
 
     bool init_skia() {
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-        SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+        if (gr_ctx && sk_surface) return true;
 
-        gl_ctx = SDL_GL_CreateContext(sdl_window);
-        if (!gl_ctx) return false;
+        if (!gl_ctx) {
+            gl_ctx = SDL_GL_CreateContext(sdl_window);
+            if (!gl_ctx) {
+                SDL_Log("SDL_GL_CreateContext failed: %s", SDL_GetError());
+                return false;
+            }
+        }
 
-        SDL_GL_MakeCurrent(sdl_window, gl_ctx);
-        SDL_GL_SetSwapInterval(1); // VSync on
+        if (!SDL_GL_MakeCurrent(sdl_window, gl_ctx)) {
+            SDL_Log("SDL_GL_MakeCurrent failed: %s", SDL_GetError());
+            return false;
+        }
+        if (!SDL_GL_SetSwapInterval(1))
+            SDL_Log("SDL_GL_SetSwapInterval failed: %s", SDL_GetError());
 
-        auto interface = GrGLMakeNativeInterface();
-        if (!interface) return false;
+        auto interface = GrGLMakeAssembledInterface(nullptr, sdl_gl_get_proc);
+        if (!interface) {
+            SDL_Log("GrGLMakeAssembledInterface failed");
+            return false;
+        }
 
         gr_ctx = GrDirectContexts::MakeGL(std::move(interface));
-        if (!gr_ctx) return false;
+        if (!gr_ctx) {
+            SDL_Log("GrDirectContexts::MakeGL failed");
+            return false;
+        }
 
         return create_surface();
     }
@@ -114,6 +150,13 @@ struct Window::Impl {
     bool create_surface() {
         int w = 0, h = 0;
         SDL_GetWindowSizeInPixels(sdl_window, &w, &h);
+        if (w <= 0 || h <= 0) {
+            SDL_GetWindowSize(sdl_window, &w, &h);
+        }
+        if (w <= 0 || h <= 0) {
+            SDL_Log("Unable to create Skia surface for invalid window size %dx%d", w, h);
+            return false;
+        }
 
         GrGLFramebufferInfo fb_info{};
         fb_info.fFBOID  = 0; // default framebuffer
@@ -125,6 +168,9 @@ struct Window::Impl {
         sk_surface = SkSurfaces::WrapBackendRenderTarget(
             gr_ctx.get(), target, kBottomLeft_GrSurfaceOrigin,
             kRGBA_8888_SkColorType, SkColorSpace::MakeSRGB(), &props);
+
+        if (!sk_surface)
+            SDL_Log("SkSurfaces::WrapBackendRenderTarget failed");
 
         return sk_surface != nullptr;
     }
@@ -142,6 +188,7 @@ struct Window::Impl {
         SDL_GL_MakeCurrent(sdl_window, gl_ctx);
 
         SkCanvas* sk_canvas = sk_surface->getCanvas();
+        sk_canvas->clear(to_sk_color(theme::bg));
         canvas.bind(sk_canvas);
 
         root->dispatch_paint(canvas);
@@ -154,8 +201,9 @@ struct Window::Impl {
 
 Window::Window(WindowConfig cfg) : impl_{std::make_unique<Impl>()} {
     impl_->config = cfg;
+    impl_->configure_gl_attributes();
 
-    uint32_t sdl_flags = SDL_WINDOW_OPENGL;
+    SDL_WindowFlags sdl_flags = SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN;
     if (has_flag(cfg.flags, WindowFlags::Resizable))   sdl_flags |= SDL_WINDOW_RESIZABLE;
     if (has_flag(cfg.flags, WindowFlags::Borderless))  sdl_flags |= SDL_WINDOW_BORDERLESS;
     if (has_flag(cfg.flags, WindowFlags::AlwaysOnTop)) sdl_flags |= SDL_WINDOW_ALWAYS_ON_TOP;
@@ -167,6 +215,8 @@ Window::Window(WindowConfig cfg) : impl_{std::make_unique<Impl>()} {
         cfg.size.w, cfg.size.h,
         sdl_flags);
 
+    if (!impl_->sdl_window)
+        SDL_Log("SDL_CreateWindow failed: %s", SDL_GetError());
     assert(impl_->sdl_window && "SDL_CreateWindow failed");
 
     if (cfg.position.x >= 0 && cfg.position.y >= 0)
@@ -176,8 +226,6 @@ Window::Window(WindowConfig cfg) : impl_{std::make_unique<Impl>()} {
         SDL_SetWindowMinimumSize(impl_->sdl_window, cfg.min_width, cfg.min_height);
     if (cfg.max_width > 0 || cfg.max_height > 0)
         SDL_SetWindowMaximumSize(impl_->sdl_window, cfg.max_width, cfg.max_height);
-
-    impl_->init_skia();
 
     impl_->root = std::make_unique<Widget>();
     impl_->root->set_bounds({0, 0, cfg.size.w, cfg.size.h});
@@ -194,7 +242,10 @@ Window::~Window() {
 }
 
 void Window::show() {
-    SDL_ShowWindow(impl_->sdl_window);
+    if (!SDL_ShowWindow(impl_->sdl_window))
+        SDL_Log("SDL_ShowWindow failed: %s", SDL_GetError());
+    SDL_SyncWindow(impl_->sdl_window);
+    impl_->init_skia();
     impl_->paint_frame();
 }
 
@@ -283,7 +334,6 @@ void Window::set_layout(std::unique_ptr<Layout> layout) {
 void Window::set_focused_widget(Widget* w) {
     if (focused_ == w) return;
     if (focused_) {
-        bool accepted = false;
         FocusEvent e{false, w};
         focused_->on_focus_loss(e);
     }
