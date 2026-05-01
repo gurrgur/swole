@@ -81,7 +81,7 @@ target_include_directories(swole
 target_link_libraries(swole
     PUBLIC
         Skia::Skia
-        SDL3::SDL3-static
+        SDL3::SDL3
 )
 
 target_compile_options(swole PRIVATE
