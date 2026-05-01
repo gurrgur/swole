@@ -103,8 +103,10 @@ public:
     // Internal: called by Application to process SDL events for this window.
     void process_sdl_event(void* sdl_event);
 
-    // Internal: returns the SDL window ID.
-    [[nodiscard]] uint32_t sdl_window_id() const;
+    [[nodiscard]] uint32_t sdl_window_id()     const;
+    [[nodiscard]] void*    native_handle()     const; // SDL_Window*
+    [[nodiscard]] void*    native_gl_context() const; // SDL_GLContext
+    [[nodiscard]] void*    native_gr_context() const; // GrDirectContext*
 
 private:
     struct Impl;

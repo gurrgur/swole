@@ -43,6 +43,12 @@ public:
 
     [[nodiscard]] std::string_view app_name() const;
 
+    // Called by Window constructor/destructor — not for user code.
+    void register_window(Window* w);
+    void unregister_window(Window* w);
+    // Read-only view of registered windows (ordered by creation time).
+    [[nodiscard]] const std::vector<Window*>& windows() const;
+
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;

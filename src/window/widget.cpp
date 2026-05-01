@@ -3,9 +3,15 @@
 
 namespace swole {
 
-Widget::Widget(Widget* parent) : parent_{parent} {
-    // Ownership transfer is handled by add_child / emplace_child;
-    // the constructor only records the parent back-pointer.
+Widget::Widget(Widget* parent) : parent_{parent} {}
+
+Window* Widget::window() const {
+    const Widget* w = this;
+    while (w) {
+        if (w->owner_window_) return w->owner_window_;
+        w = w->parent_;
+    }
+    return nullptr;
 }
 
 Widget::~Widget() = default;

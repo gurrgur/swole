@@ -100,9 +100,7 @@ Color      Paint::stroke_color() const { return from_sk(impl_->stroke.getColor()
 float      Paint::stroke_width() const { return impl_->stroke.getStrokeWidth(); }
 bool       Paint::anti_alias()   const { return impl_->fill.isAntiAlias(); }
 
-// The canvas wrapper calls native_handle() twice — once for fill, once for
-// stroke — so we expose the *fill* paint as the primary handle.  The canvas
-// handles the dual-paint draw pattern via the has_fill / has_stroke booleans.
-void* Paint::native_handle() const { return &impl_->fill; }
+void* Paint::native_fill_handle()   const { return &impl_->fill; }
+void* Paint::native_stroke_handle() const { return &impl_->stroke; }
 
 } // namespace swole

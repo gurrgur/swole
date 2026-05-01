@@ -57,8 +57,12 @@ public:
     [[nodiscard]] BlendMode  blend_mode()    const;
     [[nodiscard]] FillRule   fill_rule()     const;
 
-    // Internal: opaque handle for the renderer to cast
-    [[nodiscard]] void* native_handle() const;
+    // Internal: separate handles for fill and stroke SkPaints.
+    // Canvas uses both to implement fill-then-stroke in one draw call.
+    [[nodiscard]] void* native_fill_handle()   const;
+    [[nodiscard]] void* native_stroke_handle() const;
+    // Legacy alias — returns fill handle.
+    [[nodiscard]] void* native_handle()        const { return native_fill_handle(); }
 
 private:
     struct Impl;

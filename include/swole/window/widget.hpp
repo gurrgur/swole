@@ -123,6 +123,10 @@ public:
     // ── Tree ──
 
     [[nodiscard]] Widget*              parent()   const { return parent_; }
+    // Walk up to find the owning Window (null if not yet in a window tree).
+    [[nodiscard]] class Window*        window()   const;
+    // Called by Window — not for user code.
+    void set_owner_window(class Window* w) { owner_window_ = w; }
     [[nodiscard]] const std::vector<std::unique_ptr<Widget>>& children() const { return children_; }
 
     // Adds child, transferring ownership. Returns raw pointer for convenience.
@@ -191,6 +195,7 @@ private:
     friend class Window;
 
     Widget*     parent_{nullptr};
+    Window*     owner_window_{nullptr};
     std::vector<std::unique_ptr<Widget>> children_;
 
     PointI pos_{0, 0};
