@@ -11,8 +11,12 @@
 #include "include/core/SkColorSpace.h"
 
 #include "swole/render/canvas.hpp"
+#include "swole/render/paint.hpp"
+#include "swole/render/font.hpp"
+#include "../theme.hpp"
 
 #include <cassert>
+#include <string>
 #include <unordered_map>
 
 namespace swole {
@@ -28,6 +32,58 @@ struct Window::Impl {
     Canvas                  canvas;
 
     bool closed{false};
+
+    // ── Tooltip state ──
+    std::string   tooltip_text;
+    PointI        tooltip_pos{-1, -1};  // screen-local position where tooltip is shown
+    Uint64        tooltip_arm_ms{0};    // SDL_GetTicks() when hover started (0 = not armed)
+    bool          tooltip_visible{false};
+    static constexpr Uint64 kTooltipDelayMs = 600;
+
+    void arm_tooltip(const std::string& text, PointI pos) {
+        if (tooltip_text == text && tooltip_arm_ms != 0) return;
+        tooltip_text    = text;
+        tooltip_pos     = pos;
+        tooltip_arm_ms  = SDL_GetTicks();
+        tooltip_visible = false;
+    }
+
+    void disarm_tooltip() {
+        tooltip_arm_ms  = 0;
+        tooltip_visible = false;
+        tooltip_text.clear();
+    }
+
+    void tick_tooltip(Canvas& c) {
+        if (!tooltip_visible && tooltip_arm_ms != 0) {
+            if (SDL_GetTicks() - tooltip_arm_ms >= kTooltipDelayMs)
+                tooltip_visible = true;
+        }
+        if (!tooltip_visible || tooltip_text.empty()) return;
+        draw_tooltip(c);
+    }
+
+    void draw_tooltip(Canvas& c) {
+        Font  font = theme::default_font(12.f);
+        auto  m    = font.metrics();
+        float tw   = font.measure_text_width(tooltip_text);
+        float fh   = m.ascent + m.descent;
+        const float padx = 6.f, pady = 4.f;
+        float w = tw + padx*2, h = fh + pady*2;
+
+        // Clamp inside window
+        int sw = 0, sh = 0;
+        SDL_GetWindowSize(sdl_window, &sw, &sh);
+        float x = float(tooltip_pos.x) + 12.f;
+        float y = float(tooltip_pos.y) + 20.f;
+        if (x + w > float(sw)) x = float(sw) - w - 2.f;
+        if (y + h > float(sh)) y = float(tooltip_pos.y) - h - 4.f;
+
+        RectF r{x, y, w, h};
+        c.draw_round_rect(r.inset(.5f), 3.f, 3.f, Paint::fill({255,255,220,245}));
+        c.draw_round_rect(r.inset(.5f), 3.f, 3.f, Paint::stroke({160,160,100}));
+        c.draw_text(tooltip_text, x+padx, y+pady+m.ascent, font, Paint::fill(theme::text));
+    }
 
     bool init_skia() {
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
@@ -84,6 +140,7 @@ struct Window::Impl {
         canvas.bind(sk_canvas);
 
         root->dispatch_paint(canvas);
+        tick_tooltip(canvas);
 
         gr_ctx->flushAndSubmit();
         SDL_GL_SwapWindow(sdl_window);
@@ -119,10 +176,14 @@ Window::Window(WindowConfig cfg) : impl_{std::make_unique<Impl>()} {
 
     impl_->root = std::make_unique<Widget>();
     impl_->root->set_bounds({0, 0, cfg.size.w, cfg.size.h});
+
+    Application::instance().register_window(this);
+    impl_->root->set_owner_window(this);
 }
 
 Window::~Window() {
-    if (impl_->gl_ctx)    SDL_GL_DestroyContext(impl_->gl_ctx);
+    Application::instance().unregister_window(this);
+    if (impl_->gl_ctx)     SDL_GL_DestroyContext(impl_->gl_ctx);
     if (impl_->sdl_window) SDL_DestroyWindow(impl_->sdl_window);
 }
 
@@ -235,6 +296,10 @@ uint32_t Window::sdl_window_id() const {
     return SDL_GetWindowID(impl_->sdl_window);
 }
 
+void* Window::native_handle()     const { return impl_->sdl_window; }
+void* Window::native_gl_context() const { return impl_->gl_ctx; }
+void* Window::native_gr_context() const { return impl_->gr_ctx.get(); }
+
 void Window::process_sdl_event(void* raw_event) {
     if (!raw_event) return;
     auto& ev = *static_cast<SDL_Event*>(raw_event);
@@ -305,6 +370,19 @@ void Window::process_sdl_event(void* raw_event) {
                 if (hovered_) hovered_->on_mouse_enter(me);
             }
             target->on_mouse_move(me);
+
+            // Tooltip: re-arm on each new widget or significant cursor move
+            std::string tip = target ? std::string{target->tooltip()} : std::string{};
+            if (tip.empty()) {
+                impl_->disarm_tooltip();
+            } else {
+                PointI cur{int(ev.motion.x), int(ev.motion.y)};
+                PointI prev = impl_->tooltip_pos;
+                int dx = cur.x - prev.x, dy = cur.y - prev.y;
+                bool moved_far = (dx*dx + dy*dy) > 16;
+                if (moved_far || impl_->tooltip_text != tip)
+                    impl_->arm_tooltip(tip, cur);
+            }
         }
         break;
 

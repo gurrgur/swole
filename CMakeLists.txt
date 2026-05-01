@@ -53,9 +53,19 @@ add_library(swole STATIC
     src/widgets/text_edit.cpp
     src/widgets/tree_view.cpp
 
+    # menu & dialogs
+    src/menu.cpp
+    src/dialog.cpp
+
     # layout
     src/layout/box_layout.cpp
     src/layout/grid_layout.cpp
+
+    # extra widgets
+    src/widgets/group_box.cpp
+    src/widgets/spin_box.cpp
+    src/widgets/splitter.cpp
+    src/widgets/tool_bar.cpp
 )
 
 add_library(swole::swole ALIAS swole)

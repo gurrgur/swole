@@ -3,23 +3,24 @@
 
 #include <SDL3/SDL.h>
 #include <cassert>
-#include <chrono>
 #include <mutex>
 #include <queue>
 #include <vector>
+#include <algorithm>
 
 namespace swole {
 
 Application* Application::s_instance = nullptr;
 
 struct Application::Impl {
-    std::string app_name;
-    bool        running{false};
-    int         exit_code{0};
+    std::string  app_name;
+    bool         running{false};
+    int          exit_code{0};
+    uint32_t     wakeup_event{SDL_EVENT_USER}; // registered user event type
 
     // Cross-thread dispatch queue
-    std::mutex              queue_mutex;
-    std::queue<std::function<void()>> queue;
+    std::mutex                          queue_mutex;
+    std::queue<std::function<void()>>   queue;
 
     // Delayed callbacks: {fire_at_tick, id, fn}
     uint32_t next_timer_id{1};
@@ -28,6 +29,12 @@ struct Application::Impl {
 
     // Window registry — raw non-owning pointers; windows own themselves
     std::vector<Window*> windows;
+
+    uint64_t next_delayed_fire() const {
+        uint64_t t = UINT64_MAX;
+        for (auto& d : delayed) t = std::min(t, d.fire_at);
+        return t;
+    }
 
     void flush_queue() {
         std::queue<std::function<void()>> local;
@@ -43,15 +50,17 @@ struct Application::Impl {
 
     void fire_due_delayed() {
         uint64_t now = SDL_GetTicks();
+        // Copy to avoid re-entrancy issues if a callback schedules another
+        std::vector<Delayed> due;
         for (auto it = delayed.begin(); it != delayed.end(); ) {
-            if (now >= it->fire_at) {
-                it->fn();
-                it = delayed.erase(it);
-            } else {
-                ++it;
-            }
+            if (now >= it->fire_at) { due.push_back(std::move(*it)); it = delayed.erase(it); }
+            else ++it;
         }
+        for (auto& d : due) d.fn();
     }
+
+    void register_window(Window* w)   { windows.push_back(w); }
+    void unregister_window(Window* w) { std::erase(windows, w); }
 };
 
 Application::Application(int /*argc*/, char** argv)
@@ -62,10 +71,13 @@ Application::Application(int /*argc*/, char** argv)
 
     impl_->app_name = argv ? argv[0] : "swole";
 
-    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
         SDL_Log("SDL_Init failed: %s", SDL_GetError());
-        // TODO: throw or log properly
-    }
+
+    // Reserve one user-event type for cross-thread wakeups.
+    uint32_t base = SDL_RegisterEvents(1);
+    if (base != (uint32_t)-1)
+        impl_->wakeup_event = base;
 }
 
 Application::~Application() {
@@ -79,53 +91,67 @@ Application& Application::instance() {
 }
 
 int Application::run() {
-    impl_->running = true;
+    impl_->running   = true;
     impl_->exit_code = 0;
 
     SDL_Event ev;
     while (impl_->running) {
-        // Drain pending cross-thread callbacks
         impl_->flush_queue();
         impl_->fire_due_delayed();
 
-        // Poll SDL events and forward to the relevant window
-        while (SDL_PollEvent(&ev)) {
-            if (ev.type == SDL_EVENT_QUIT) {
-                quit();
-                break;
-            }
+        // Compute how long until the next delayed callback so we can
+        // sleep exactly that long instead of busy-polling.
+        uint64_t now   = SDL_GetTicks();
+        uint64_t next  = impl_->next_delayed_fire();
+        int      wait_ms = (next == UINT64_MAX) ? 16
+                         : int(std::max(uint64_t(0), next - now));
+        wait_ms = std::clamp(wait_ms, 0, 16); // cap at one frame
 
-            // Route to the correct window
-            for (Window* w : impl_->windows) {
+        // Wait for an event or timeout.
+        SDL_WaitEventTimeout(&ev, wait_ms);
+
+        // Drain all pending events.
+        do {
+            if (ev.type == SDL_EVENT_QUIT) { quit(); break; }
+            if (ev.type == impl_->wakeup_event) continue; // just a wakeup ping
+
+            for (Window* w : impl_->windows)
                 w->process_sdl_event(&ev);
-            }
-        }
 
-        // If all windows closed, exit naturally
-        bool any_visible = false;
+        } while (SDL_PollEvent(&ev));
+
+        // Repaint all visible windows every frame so tooltip timers fire,
+        // animations run, and invalidated widgets are always flushed.
         for (Window* w : impl_->windows)
-            if (w->is_visible()) { any_visible = true; break; }
+            if (w->is_visible()) w->repaint_now();
 
-        if (!any_visible && impl_->windows.empty())
-            quit();
-
-        SDL_Delay(1); // yield; replace with frame-paced loop when rendering
+        // Quit when no windows remain.
+        if (impl_->windows.empty()) quit();
     }
 
     return impl_->exit_code;
 }
 
 void Application::quit(int exit_code) {
-    impl_->running  = false;
+    impl_->running   = false;
     impl_->exit_code = exit_code;
 }
 
 bool Application::is_running() const { return impl_->running; }
 
+void Application::register_window(Window* w)   { impl_->register_window(w); }
+void Application::unregister_window(Window* w) { impl_->unregister_window(w); }
+
+const std::vector<Window*>& Application::windows() const { return impl_->windows; }
+
 void Application::post(std::function<void()> fn) {
-    std::lock_guard lock{impl_->queue_mutex};
-    impl_->queue.push(std::move(fn));
-    SDL_PushEvent(nullptr); // wake the event loop
+    {
+        std::lock_guard lock{impl_->queue_mutex};
+        impl_->queue.push(std::move(fn));
+    }
+    SDL_Event ev{};
+    ev.type = impl_->wakeup_event;
+    SDL_PushEvent(&ev);
 }
 
 uint32_t Application::post_delayed(uint32_t ms, std::function<void()> fn) {
@@ -140,8 +166,8 @@ void Application::cancel_delayed(uint32_t id) {
 }
 
 std::string Application::clipboard_text() const {
-    const char* text = SDL_GetClipboardText();
-    return text ? std::string{text} : std::string{};
+    const char* t = SDL_GetClipboardText();
+    return t ? std::string{t} : std::string{};
 }
 
 void Application::set_clipboard_text(std::string_view text) {
