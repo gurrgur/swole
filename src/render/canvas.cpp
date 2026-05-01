@@ -235,7 +235,7 @@ void Canvas::draw_text(std::string_view text, RectF bounds,
         y = bounds.y - fm.fAscent;
         break;
     case TextBaseline::Middle:
-        y = bounds.y + bounds.h * 0.5f - (fm.fAscent + fm.fDescent) * 0.5f - fm.fDescent;
+        y = bounds.y + bounds.h * 0.5f - (fm.fAscent + fm.fDescent) * 0.5f;
         break;
     case TextBaseline::Bottom:
         y = bounds.bottom() - fm.fDescent;

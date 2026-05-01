@@ -98,8 +98,8 @@ FontMetrics Font::metrics() const {
         .ascent    = -m.fAscent,   // Skia ascent is negative, we flip
         .descent   =  m.fDescent,
         .leading   =  m.fLeading,
-        .cap_height =  m.fCapHeight,
-        .x_height  =  m.fXHeight,
+        .cap_height = -m.fCapHeight,
+        .x_height  = -m.fXHeight,
     };
 }
 
@@ -111,7 +111,7 @@ SizeF Font::measure_text(std::string_view text) const {
     SkRect bounds;
     float w = impl_->font.measureText(text.data(), text.size(),
                                       SkTextEncoding::kUTF8, &bounds);
-    return {w, bounds.height()};
+    return {w, metrics().line_height()};
 }
 
 void* Font::native_handle() const { return &impl_->font; }
