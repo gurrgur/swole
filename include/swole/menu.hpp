@@ -63,6 +63,7 @@ public:
 
     [[nodiscard]] int item_count() const { return int(items_.size()); }
     [[nodiscard]] MenuItem& item(int i) { return *items_[i]; }
+    [[nodiscard]] const MenuItem& item(int i) const { return *items_[i]; }
 
     // Show as a floating popup at global screen coordinates.
     // Returns the triggered MenuItem* or nullptr if dismissed.

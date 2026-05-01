@@ -58,6 +58,7 @@ add_library(swole STATIC
     src/dialog.cpp
 
     # layout
+    src/layout/layout.cpp
     src/layout/box_layout.cpp
     src/layout/form_layout.cpp
     src/layout/grid_layout.cpp

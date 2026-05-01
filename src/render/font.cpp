@@ -1,8 +1,15 @@
 #include "swole/render/font.hpp"
 
 #include "include/core/SkFont.h"
+#include "include/core/SkFontMetrics.h"
 #include "include/core/SkFontMgr.h"
+#include "include/core/SkFontTypes.h"
 #include "include/core/SkTypeface.h"
+
+#if defined(__linux__)
+#include "include/ports/SkFontMgr_fontconfig.h"
+#include "include/ports/SkFontScanner_FreeType.h"
+#endif
 
 namespace swole {
 
@@ -16,6 +23,14 @@ SkFontStyle to_sk_style(FontWeight w, FontStyle s) {
     return SkFontStyle(weight, width, slant);
 }
 
+sk_sp<SkFontMgr> default_font_mgr() {
+#if defined(__linux__)
+    return SkFontMgr_New_FontConfig(nullptr, SkFontScanner_Make_FreeType());
+#else
+    return SkFontMgr::RefEmpty();
+#endif
+}
+
 } // namespace
 
 struct Font::Impl {
@@ -27,9 +42,11 @@ struct Font::Impl {
     FontStyle         style{FontStyle::Normal};
 
     void rebuild() {
-        auto mgr = SkFontMgr::RefDefault();
-        typeface  = mgr->matchFamilyStyle(family.c_str(), to_sk_style(weight, style));
-        if (!typeface) typeface = SkTypeface::MakeDefault();
+        auto mgr = default_font_mgr();
+        const char* family_name = family.empty() ? nullptr : family.c_str();
+        typeface = mgr->matchFamilyStyle(family_name, to_sk_style(weight, style));
+        if (!typeface) typeface = mgr->matchFamilyStyle(nullptr, to_sk_style(weight, style));
+        if (!typeface) typeface = SkTypeface::MakeEmpty();
         font = SkFont(typeface, size);
         font.setEdging(SkFont::Edging::kSubpixelAntiAlias);
         font.setSubpixel(true);

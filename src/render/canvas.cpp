@@ -4,9 +4,11 @@
 #include "include/core/SkPaint.h"
 #include "include/core/SkPath.h"
 #include "include/core/SkFont.h"
+#include "include/core/SkFontMetrics.h"
 #include "include/core/SkImage.h"
 #include "include/core/SkMatrix.h"
 #include "include/core/SkRRect.h"
+#include "include/core/SkSpan.h"
 #include "include/effects/SkGradientShader.h"
 #include "include/effects/SkImageFilters.h"
 
@@ -151,7 +153,7 @@ void Canvas::draw_points(std::span<const PointF> pts, const Paint& p) {
     for (auto& pt : pts) sk_pts.push_back(to_sk(pt));
     const SkPaint& sp = p.is_stroke() ? stroke_sk(p) : fill_sk(p);
     sk(sk_canvas_)->drawPoints(SkCanvas::kPoints_PointMode,
-                               sk_pts.size(), sk_pts.data(), sp);
+                               SkSpan<const SkPoint>(sk_pts.data(), sk_pts.size()), sp);
 }
 void Canvas::draw_polygon(std::span<const PointF> pts, bool closed, const Paint& p) {
     if (pts.empty()) return;

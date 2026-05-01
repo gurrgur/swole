@@ -139,7 +139,7 @@ open_file_dialog(Window* parent, OpenFileOptions opts) {
         sdl_filters.empty() ? nullptr : sdl_filters.data(),
         int(sdl_filters.size()),
         loc.empty() ? nullptr : loc.c_str(),
-        opts.allow_multiple ? SDL_TRUE : SDL_FALSE);
+        opts.allow_multiple);
 
     modal_loop([&]{ return state.done.load(std::memory_order_acquire); });
     return std::move(state.paths);
@@ -180,7 +180,7 @@ choose_directory(Window* parent, std::string_view /*title*/,
     SDL_ShowOpenFolderDialog(
         file_dialog_cb, &state, sdl_win,
         loc.empty() ? nullptr : loc.c_str(),
-        SDL_FALSE);
+        false);
 
     modal_loop([&]{ return state.done.load(std::memory_order_acquire); });
     if (state.paths.empty()) return std::nullopt;

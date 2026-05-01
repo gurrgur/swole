@@ -42,17 +42,38 @@ Image Image::from_pixels(int width, int height, ImageFormat format,
     SkColorType ct;
     switch (format) {
     case ImageFormat::RGBA8: ct = kRGBA_8888_SkColorType; break;
-    case ImageFormat::RGB8:  ct = kRGB_888x_SkColorType;  break;
     case ImageFormat::BGRA8: ct = kBGRA_8888_SkColorType; break;
-    case ImageFormat::BGR8:  ct = kBGR_888x_SkColorType;  break;
     case ImageFormat::A8:    ct = kAlpha_8_SkColorType;   break;
+    case ImageFormat::RGB8:
+    case ImageFormat::BGR8:  ct = kRGBA_8888_SkColorType; break;
     default:                 ct = kRGBA_8888_SkColorType; break;
     }
 
     SkImageInfo info = SkImageInfo::Make(width, height, ct, kPremul_SkAlphaType);
-    int rb = (row_bytes > 0) ? row_bytes : width * 4;
+    int bytes_per_pixel = (format == ImageFormat::A8) ? 1
+                        : (format == ImageFormat::RGB8 || format == ImageFormat::BGR8) ? 3
+                        : 4;
+    int rb = (row_bytes > 0) ? row_bytes : width * bytes_per_pixel;
 
-    auto sk_data = SkData::MakeWithCopy(data.data(), data.size());
+    sk_sp<SkData> sk_data;
+    if (format == ImageFormat::RGB8 || format == ImageFormat::BGR8) {
+        std::vector<uint8_t> rgba(size_t(width) * size_t(height) * 4);
+        for (int y = 0; y < height; ++y) {
+            const uint8_t* src = data.data() + size_t(y) * size_t(rb);
+            uint8_t* dst = rgba.data() + size_t(y) * size_t(width) * 4;
+            for (int x = 0; x < width; ++x) {
+                dst[x * 4 + 0] = format == ImageFormat::RGB8 ? src[x * 3 + 0] : src[x * 3 + 2];
+                dst[x * 4 + 1] = src[x * 3 + 1];
+                dst[x * 4 + 2] = format == ImageFormat::RGB8 ? src[x * 3 + 2] : src[x * 3 + 0];
+                dst[x * 4 + 3] = 255;
+            }
+        }
+        sk_data = SkData::MakeWithCopy(rgba.data(), rgba.size());
+        rb = width * 4;
+    } else {
+        sk_data = SkData::MakeWithCopy(data.data(), data.size());
+    }
+
     auto sk_img  = SkImages::RasterFromData(info, std::move(sk_data), rb);
 
     Image img;

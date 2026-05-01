@@ -57,6 +57,7 @@ protected:
     void on_key_press(const KeyEvent& e) override;
     void on_text_input(const TextInputEvent& e) override;
     void on_mouse_press(const MouseEvent& e) override;
+    void on_mouse_release(const MouseEvent& e) override;
     void on_mouse_move(const MouseEvent& e) override;
     void on_focus_gain(const FocusEvent& e) override;
     void on_focus_loss(const FocusEvent& e) override;

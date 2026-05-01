@@ -9,9 +9,11 @@
 
 // Skia GPU — only in this translation unit.
 #include "include/gpu/ganesh/GrDirectContext.h"
+#include "include/gpu/ganesh/GrBackendSurface.h"
 #include "include/gpu/ganesh/SkSurfaceGanesh.h"
+#include "include/gpu/ganesh/gl/GrGLBackendSurface.h"
 #include "include/gpu/ganesh/gl/GrGLDirectContext.h"
-#include "include/gpu/gl/GrGLInterface.h"
+#include "include/gpu/ganesh/gl/GrGLInterface.h"
 #include "include/core/SkSurface.h"
 #include "include/core/SkCanvas.h"
 #include "include/core/SkColorSpace.h"
@@ -79,11 +81,12 @@ struct PopupGeometry {
 
     void measure() {
         Font font = theme::default_font();
-        for (auto& it : menu->items_) {
-            if (it->kind() == MenuItemKind::Separator) { height += kSepH; continue; }
-            int icon_w = it->icon().is_valid() ? 20 : 0; // 16px icon + 4px gap
-            int tw = int(font.measure_text_width(it->label())) + kPadX * 2 + 20 + icon_w;
-            if (it->kind() == MenuItemKind::SubMenu) tw += kArrowW;
+        for (int i = 0; i < menu->item_count(); ++i) {
+            const MenuItem& item = menu->item(i);
+            if (item.kind() == MenuItemKind::Separator) { height += kSepH; continue; }
+            int icon_w = item.icon().is_valid() ? 20 : 0; // 16px icon + 4px gap
+            int tw = int(font.measure_text_width(item.label())) + kPadX * 2 + 20 + icon_w;
+            if (item.kind() == MenuItemKind::SubMenu) tw += kArrowW;
             width  = std::max(width, tw);
             height += kItemH;
         }
@@ -93,15 +96,15 @@ struct PopupGeometry {
 
     int item_y(int index) const {
         int y = 5;
-        for (int i = 0; i < index && i < int(menu->items_.size()); ++i)
-            y += (menu->items_[i]->kind() == MenuItemKind::Separator) ? kSepH : kItemH;
+        for (int i = 0; i < index && i < menu->item_count(); ++i)
+            y += (menu->item(i).kind() == MenuItemKind::Separator) ? kSepH : kItemH;
         return y;
     }
 
     int item_at(int ly) const {
         int y = 5;
-        for (int i = 0; i < int(menu->items_.size()); ++i) {
-            bool sep = (menu->items_[i]->kind() == MenuItemKind::Separator);
+        for (int i = 0; i < menu->item_count(); ++i) {
+            bool sep = (menu->item(i).kind() == MenuItemKind::Separator);
             int h = sep ? kSepH : kItemH;
             if (!sep && ly >= y && ly < y + h) return i;
             y += h;
@@ -117,8 +120,8 @@ struct PopupGeometry {
         Font font = theme::default_font();
         auto m    = font.metrics();
 
-        for (int i = 0; i < int(menu->items_.size()); ++i) {
-            const MenuItem& item = *menu->items_[i];
+        for (int i = 0; i < menu->item_count(); ++i) {
+            const MenuItem& item = menu->item(i);
             int iy = item_y(i);
 
             if (item.kind() == MenuItemKind::Separator) {
@@ -216,7 +219,7 @@ MenuItem* run_popup(const Menu* menu, PointI screen_pos, Window& parent_window) 
         GrGLFramebufferInfo fb_info{};
         fb_info.fFBOID  = 0;
         fb_info.fFormat = 0x8058; // GL_RGBA8
-        auto target = GrBackendRenderTarget(geo.width, geo.height, 0, 8, fb_info);
+        auto target = GrBackendRenderTargets::MakeGL(geo.width, geo.height, 0, 8, fb_info);
         SkSurfaceProps props;
         return SkSurfaces::WrapBackendRenderTarget(
             gr, target, kBottomLeft_GrSurfaceOrigin,
@@ -256,7 +259,7 @@ MenuItem* run_popup(const Menu* menu, PointI screen_pos, Window& parent_window) 
                 {
                     int idx = geo.item_at(int(ev.button.y));
                     if (idx >= 0) {
-                        auto& item = *menu->items_[idx];
+                        auto& item = const_cast<MenuItem&>(menu->item(idx));
                         if (item.is_enabled() && item.kind() == MenuItemKind::Action) {
                             result = &item;
                             done   = true;
@@ -277,18 +280,18 @@ MenuItem* run_popup(const Menu* menu, PointI screen_pos, Window& parent_window) 
                 case SDLK_ESCAPE: done = true; break;
                 case SDLK_UP:
                     { int n = geo.hovered - 1;
-                      while (n >= 0 && menu->items_[n]->kind() == MenuItemKind::Separator) --n;
+                      while (n >= 0 && menu->item(n).kind() == MenuItemKind::Separator) --n;
                       if (n >= 0) { geo.hovered = n; repaint(); } }
                     break;
                 case SDLK_DOWN:
                     { int n = geo.hovered + 1;
-                      while (n < int(menu->items_.size()) &&
-                             menu->items_[n]->kind() == MenuItemKind::Separator) ++n;
-                      if (n < int(menu->items_.size())) { geo.hovered = n; repaint(); } }
+                      while (n < menu->item_count() &&
+                             menu->item(n).kind() == MenuItemKind::Separator) ++n;
+                      if (n < menu->item_count()) { geo.hovered = n; repaint(); } }
                     break;
                 case SDLK_RETURN: case SDLK_SPACE:
                     if (geo.hovered >= 0) {
-                        auto& item = *menu->items_[geo.hovered];
+                        auto& item = const_cast<MenuItem&>(menu->item(geo.hovered));
                         if (item.is_enabled() && item.kind() == MenuItemKind::Action) {
                             result = &item; done = true;
                         }

@@ -2,10 +2,12 @@
 
 #include <SDL3/SDL.h>
 // Skia GPU surface
+#include "include/gpu/ganesh/GrBackendSurface.h"
 #include "include/gpu/ganesh/GrDirectContext.h"
+#include "include/gpu/ganesh/gl/GrGLBackendSurface.h"
 #include "include/gpu/ganesh/gl/GrGLDirectContext.h"
 #include "include/gpu/ganesh/SkSurfaceGanesh.h"
-#include "include/gpu/gl/GrGLInterface.h"
+#include "include/gpu/ganesh/gl/GrGLInterface.h"
 #include "include/core/SkSurface.h"
 #include "include/core/SkCanvas.h"
 #include "include/core/SkColorSpace.h"
@@ -13,6 +15,8 @@
 #include "swole/render/canvas.hpp"
 #include "swole/render/paint.hpp"
 #include "swole/render/font.hpp"
+#include "swole/core/application.hpp"
+#include "swole/layout/layout.hpp"
 #include "../theme.hpp"
 
 #include <algorithm>
@@ -115,7 +119,7 @@ struct Window::Impl {
         fb_info.fFBOID  = 0; // default framebuffer
         fb_info.fFormat = 0x8058; // GL_RGBA8
 
-        auto target = GrBackendRenderTarget(w, h, 0, 8, fb_info);
+        auto target = GrBackendRenderTargets::MakeGL(w, h, 0, 8, fb_info);
 
         SkSurfaceProps props;
         sk_surface = SkSurfaces::WrapBackendRenderTarget(
@@ -318,12 +322,12 @@ void Window::remove_shortcut(uint32_t id) {
 
 void Window::capture_mouse(Widget* w) {
     captured_ = w;
-    SDL_SetWindowMouseGrab(static_cast<SDL_Window*>(impl_->sdl_window), SDL_TRUE);
+    SDL_SetWindowMouseGrab(static_cast<SDL_Window*>(impl_->sdl_window), true);
 }
 
 void Window::release_capture() {
     captured_ = nullptr;
-    SDL_SetWindowMouseGrab(static_cast<SDL_Window*>(impl_->sdl_window), SDL_FALSE);
+    SDL_SetWindowMouseGrab(static_cast<SDL_Window*>(impl_->sdl_window), false);
 }
 
 // ── Cursor ────────────────────────────────────────────────────────────────────

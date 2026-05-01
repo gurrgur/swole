@@ -47,11 +47,21 @@ if (Skia_FOUND AND NOT TARGET Skia::Skia)
         find_package(Threads REQUIRED)
         find_package(Freetype REQUIRED)
         find_package(Fontconfig REQUIRED)
+        find_package(ZLIB REQUIRED)
+        find_package(PNG REQUIRED)
+        find_package(JPEG REQUIRED)
+        find_library(WEBP_LIBRARY NAMES webp REQUIRED)
+        find_library(WEBPDEMUX_LIBRARY NAMES webpdemux REQUIRED)
         set_property(TARGET Skia::Skia APPEND PROPERTY
             INTERFACE_LINK_LIBRARIES
                 Threads::Threads
                 Freetype::Freetype
                 Fontconfig::Fontconfig
+                ZLIB::ZLIB
+                PNG::PNG
+                JPEG::JPEG
+                "${WEBPDEMUX_LIBRARY}"
+                "${WEBP_LIBRARY}"
                 dl GL
         )
     elseif (APPLE)

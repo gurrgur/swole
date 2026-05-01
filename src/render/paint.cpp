@@ -1,7 +1,10 @@
 #include "swole/render/paint.hpp"
 
 #include "include/core/SkPaint.h"
+#include "include/core/SkBlendMode.h"
 #include "include/core/SkColor.h"
+#include "include/core/SkScalar.h"
+#include "include/core/SkSpan.h"
 #include "include/effects/SkDashPathEffect.h"
 
 #include <vector>
@@ -104,7 +107,8 @@ Paint& Paint::set_dash_pattern(std::span<const float> intervals, float offset) {
         impl_->stroke.setPathEffect(nullptr);
     } else {
         impl_->stroke.setPathEffect(
-            SkDashPathEffect::Make(intervals.data(), int(intervals.size()), offset));
+            SkDashPathEffect::Make(
+                SkSpan<const SkScalar>(intervals.data(), intervals.size()), offset));
     }
     return *this;
 }
@@ -134,7 +138,9 @@ bool       Paint::anti_alias()   const { return impl_->fill.isAntiAlias(); }
 StrokeCap  Paint::stroke_cap()   const { return from_sk_cap(impl_->stroke.getStrokeCap()); }
 StrokeJoin Paint::stroke_join()  const { return from_sk_join(impl_->stroke.getStrokeJoin()); }
 float      Paint::miter_limit()  const { return impl_->stroke.getStrokeMiter(); }
-BlendMode  Paint::blend_mode()   const { return from_sk_blend(impl_->fill.getBlendMode()); }
+BlendMode  Paint::blend_mode()   const {
+    return from_sk_blend(impl_->fill.getBlendMode_or(SkBlendMode::kSrcOver));
+}
 FillRule   Paint::fill_rule()    const { return impl_->fill_rule; }
 
 void* Paint::native_fill_handle()   const { return &impl_->fill; }
