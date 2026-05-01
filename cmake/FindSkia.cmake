@@ -46,7 +46,7 @@ if (Skia_FOUND AND NOT TARGET Skia::Skia)
     if (UNIX AND NOT APPLE)
         find_package(Threads REQUIRED)
         find_package(Freetype REQUIRED)
-        find_package(FontConfig REQUIRED)
+        find_package(Fontconfig REQUIRED)
         set_property(TARGET Skia::Skia APPEND PROPERTY
             INTERFACE_LINK_LIBRARIES
                 Threads::Threads
