@@ -81,7 +81,8 @@ struct PopupGeometry {
         Font font = theme::default_font();
         for (auto& it : menu->items_) {
             if (it->kind() == MenuItemKind::Separator) { height += kSepH; continue; }
-            int tw = int(font.measure_text_width(it->label())) + kPadX * 2 + 20;
+            int icon_w = it->icon().is_valid() ? 20 : 0; // 16px icon + 4px gap
+            int tw = int(font.measure_text_width(it->label())) + kPadX * 2 + 20 + icon_w;
             if (it->kind() == MenuItemKind::SubMenu) tw += kArrowW;
             width  = std::max(width, tw);
             height += kItemH;
@@ -137,11 +138,22 @@ struct PopupGeometry {
                       : (i == hovered)     ? theme::sel_text
                                            : theme::text;
 
-            float by = ir.y + (ir.h - m.ascent - m.descent) * .5f + m.ascent;
-            canvas.draw_text(item.label(), float(kPadX), by, font, Paint::fill(col));
+            float by   = ir.y + (ir.h - m.ascent - m.descent) * .5f + m.ascent;
+            float text_x = float(kPadX);
 
-            // Checkmark
-            if (item.is_checked()) {
+            // Icon (16×16, left of label)
+            if (item.icon().is_valid()) {
+                constexpr float kIconSz = 16.f;
+                float ix = float(kPadX);
+                float iy2 = ir.y + (ir.h - kIconSz) * .5f;
+                canvas.draw_image(item.icon(), {ix, iy2, kIconSz, kIconSz});
+                text_x = ix + kIconSz + 4.f;
+            }
+
+            canvas.draw_text(item.label(), text_x, by, font, Paint::fill(col));
+
+            // Checkmark (when no icon)
+            if (item.is_checked() && !item.icon().is_valid()) {
                 auto cp = Paint::stroke(col, 1.5f);
                 cp.set_stroke_cap(StrokeCap::Round);
                 float cx = 7.f, cy = ir.y + ir.h * .5f;

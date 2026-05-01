@@ -2,6 +2,7 @@
 
 #include "core/types.hpp"
 #include "core/event.hpp"
+#include "render/image.hpp"
 #include "window/widget.hpp"
 #include <functional>
 #include <memory>
@@ -24,16 +25,17 @@ public:
     static MenuItem separator();
     static MenuItem submenu(std::string_view label, std::unique_ptr<class Menu> sub);
 
-    void set_enabled(bool v) { enabled_ = v; }
-    void set_checked(bool v) { checked_ = v; }
+    void set_enabled(bool v)      { enabled_ = v; }
+    void set_checked(bool v)      { checked_ = v; }
     void set_shortcut(Key key, KeyMods mods = {});
-    void set_icon(/* Image icon */);
+    void set_icon(Image icon)     { icon_ = std::move(icon); }
 
-    [[nodiscard]] bool        is_enabled()   const { return enabled_; }
-    [[nodiscard]] bool        is_checked()   const { return checked_; }
-    [[nodiscard]] MenuItemKind kind()        const { return kind_; }
-    [[nodiscard]] std::string_view label()   const { return label_; }
-    [[nodiscard]] Menu*        submenu()     const { return submenu_.get(); }
+    [[nodiscard]] bool           is_enabled()   const { return enabled_; }
+    [[nodiscard]] bool           is_checked()   const { return checked_; }
+    [[nodiscard]] MenuItemKind   kind()         const { return kind_; }
+    [[nodiscard]] std::string_view label()      const { return label_; }
+    [[nodiscard]] Menu*          submenu()      const { return submenu_.get(); }
+    [[nodiscard]] const Image&   icon()         const { return icon_; }
 
     void trigger() { if (on_triggered) on_triggered(); }
 
@@ -46,6 +48,7 @@ private:
     bool          checked_{false};
     Key           shortcut_key_{Key::Unknown};
     KeyMods       shortcut_mods_{};
+    Image         icon_;
     std::unique_ptr<Menu> submenu_;
 };
 

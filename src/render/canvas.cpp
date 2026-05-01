@@ -6,10 +6,15 @@
 #include "include/core/SkFont.h"
 #include "include/core/SkImage.h"
 #include "include/core/SkMatrix.h"
+#include "include/core/SkRRect.h"
+#include "include/effects/SkGradientShader.h"
+#include "include/effects/SkImageFilters.h"
 
 #include "swole/render/paint.hpp"
 #include "swole/render/font.hpp"
 #include "swole/render/image.hpp"
+
+#include <vector>
 
 namespace swole {
 
@@ -239,6 +244,112 @@ void Canvas::draw_text(std::string_view text, RectF bounds,
     }
 
     draw_text(text, x, y, font, paint);
+}
+
+// ── Gradients ─────────────────────────────────────────────────────────────────
+
+namespace {
+// Build SkColor array and optional stops vector for gradient calls.
+// Returns the skia-ready colors; populates sk_stops if stops is non-empty.
+static std::vector<SkColor>
+build_gradient_colors(std::span<const Color> colors,
+                      std::span<const float> stops,
+                      std::vector<float>& sk_stops_out) {
+    std::vector<SkColor> sk_colors;
+    sk_colors.reserve(colors.size());
+    for (auto& c : colors) sk_colors.push_back(to_sk(c));
+    if (!stops.empty()) {
+        sk_stops_out.assign(stops.begin(), stops.end());
+    }
+    return sk_colors;
+}
+} // namespace
+
+void Canvas::fill_linear_gradient(RectF dst, PointF from, PointF to,
+                                   std::span<const Color> colors,
+                                   std::span<const float> stops) {
+    if (colors.size() < 2) return;
+    std::vector<float> sk_stops;
+    auto sk_colors = build_gradient_colors(colors, stops, sk_stops);
+
+    SkPoint pts[2] = {to_sk(from), to_sk(to)};
+    auto shader = SkGradientShader::MakeLinear(
+        pts, sk_colors.data(),
+        sk_stops.empty() ? nullptr : sk_stops.data(),
+        int(sk_colors.size()),
+        SkTileMode::kClamp);
+
+    SkPaint sp;
+    sp.setAntiAlias(true);
+    sp.setShader(std::move(shader));
+    sk(sk_canvas_)->drawRect(to_sk(dst), sp);
+}
+
+void Canvas::fill_radial_gradient(RectF dst, PointF center, float radius,
+                                   std::span<const Color> colors,
+                                   std::span<const float> stops) {
+    if (colors.size() < 2) return;
+    std::vector<float> sk_stops;
+    auto sk_colors = build_gradient_colors(colors, stops, sk_stops);
+
+    auto shader = SkGradientShader::MakeRadial(
+        to_sk(center), radius,
+        sk_colors.data(),
+        sk_stops.empty() ? nullptr : sk_stops.data(),
+        int(sk_colors.size()),
+        SkTileMode::kClamp);
+
+    SkPaint sp;
+    sp.setAntiAlias(true);
+    sp.setShader(std::move(shader));
+    sk(sk_canvas_)->drawRect(to_sk(dst), sp);
+}
+
+void Canvas::fill_round_rect_linear_gradient(RectF dst, float rx, float ry,
+                                              PointF from, PointF to,
+                                              std::span<const Color> colors,
+                                              std::span<const float> stops) {
+    if (colors.size() < 2) return;
+    std::vector<float> sk_stops;
+    auto sk_colors = build_gradient_colors(colors, stops, sk_stops);
+
+    SkPoint pts[2] = {to_sk(from), to_sk(to)};
+    auto shader = SkGradientShader::MakeLinear(
+        pts, sk_colors.data(),
+        sk_stops.empty() ? nullptr : sk_stops.data(),
+        int(sk_colors.size()),
+        SkTileMode::kClamp);
+
+    SkPaint sp;
+    sp.setAntiAlias(true);
+    sp.setShader(std::move(shader));
+    sk(sk_canvas_)->drawRoundRect(to_sk(dst), rx, ry, sp);
+}
+
+// ── Shadows ───────────────────────────────────────────────────────────────────
+
+void Canvas::draw_shadow(RectF r, float blur_radius,
+                          float dx, float dy,
+                          Color color, float corner_radius) {
+    SkPaint sp;
+    sp.setAntiAlias(true);
+    sp.setColor(to_sk(color));
+    sp.setImageFilter(
+        SkImageFilters::Blur(blur_radius / 2.f, blur_radius / 2.f, nullptr));
+
+    // Expand the rect slightly so the blur doesn't get clipped at edges
+    float expand = blur_radius * 1.5f;
+    RectF shadow_r{r.x + dx - expand, r.y + dy - expand,
+                   r.w + expand * 2.f,  r.h + expand * 2.f};
+
+    auto guard = scoped_save();
+    // Clip to prevent shadow bleeding into foreground content
+    clip_rect({r.x - expand, r.y - expand,
+               r.w + expand*2.f, r.h + expand*2.f + blur_radius*2.f});
+    if (corner_radius > 0.f)
+        sk(sk_canvas_)->drawRoundRect(to_sk(shadow_r), corner_radius, corner_radius, sp);
+    else
+        sk(sk_canvas_)->drawRect(to_sk(shadow_r), sp);
 }
 
 } // namespace swole

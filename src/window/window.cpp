@@ -15,9 +15,10 @@
 #include "swole/render/font.hpp"
 #include "../theme.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <string>
-#include <unordered_map>
+#include <vector>
 
 namespace swole {
 
@@ -182,6 +183,7 @@ Window::Window(WindowConfig cfg) : impl_{std::make_unique<Impl>()} {
 }
 
 Window::~Window() {
+    free_cursors();
     Application::instance().unregister_window(this);
     if (impl_->gl_ctx)     SDL_GL_DestroyContext(impl_->gl_ctx);
     if (impl_->sdl_window) SDL_DestroyWindow(impl_->sdl_window);
@@ -300,11 +302,103 @@ void* Window::native_handle()     const { return impl_->sdl_window; }
 void* Window::native_gl_context() const { return impl_->gl_ctx; }
 void* Window::native_gr_context() const { return impl_->gr_ctx.get(); }
 
+// ── Shortcuts ─────────────────────────────────────────────────────────────────
+
+uint32_t Window::add_shortcut(Key key, KeyMods mods, std::function<void()> fn) {
+    uint32_t id = next_shortcut_id_++;
+    shortcuts_.push_back({id, key, mods, std::move(fn)});
+    return id;
+}
+
+void Window::remove_shortcut(uint32_t id) {
+    std::erase_if(shortcuts_, [id](const Shortcut& s){ return s.id == id; });
+}
+
+// ── Mouse capture ─────────────────────────────────────────────────────────────
+
+void Window::capture_mouse(Widget* w) {
+    captured_ = w;
+    SDL_SetWindowMouseGrab(static_cast<SDL_Window*>(impl_->sdl_window), SDL_TRUE);
+}
+
+void Window::release_capture() {
+    captured_ = nullptr;
+    SDL_SetWindowMouseGrab(static_cast<SDL_Window*>(impl_->sdl_window), SDL_FALSE);
+}
+
+// ── Cursor ────────────────────────────────────────────────────────────────────
+
+void Window::init_cursors() {
+    static const SDL_SystemCursor kMap[] = {
+        SDL_SYSTEM_CURSOR_DEFAULT,     // Arrow
+        SDL_SYSTEM_CURSOR_TEXT,        // IBeam
+        SDL_SYSTEM_CURSOR_WAIT,        // Wait
+        SDL_SYSTEM_CURSOR_CROSSHAIR,   // Crosshair
+        SDL_SYSTEM_CURSOR_POINTER,     // Hand
+        SDL_SYSTEM_CURSOR_EW_RESIZE,   // SizeH
+        SDL_SYSTEM_CURSOR_NS_RESIZE,   // SizeV
+        SDL_SYSTEM_CURSOR_MOVE,        // SizeAll
+        SDL_SYSTEM_CURSOR_NOT_ALLOWED, // Forbidden
+        SDL_SYSTEM_CURSOR_DEFAULT,     // Blank (no native blank; hide separately)
+    };
+    for (int i = 0; i < 10; ++i)
+        sdl_cursors_[i] = SDL_CreateSystemCursor(kMap[i]);
+}
+
+void Window::free_cursors() {
+    for (int i = 0; i < 10; ++i) {
+        if (sdl_cursors_[i]) SDL_DestroyCursor(static_cast<SDL_Cursor*>(sdl_cursors_[i]));
+        sdl_cursors_[i] = nullptr;
+    }
+}
+
+void Window::apply_cursor(CursorShape shape) {
+    int idx = int(shape);
+    if (idx < 0 || idx >= 10) return;
+    if (!sdl_cursors_[0]) init_cursors();
+    SDL_SetCursor(static_cast<SDL_Cursor*>(sdl_cursors_[idx]));
+    if (shape == CursorShape::Blank) SDL_HideCursor();
+    else SDL_ShowCursor();
+}
+
+// ── Tab navigation ────────────────────────────────────────────────────────────
+
+void Window::collect_tab_widgets(Widget& w, std::vector<Widget*>& out) {
+    if (!w.is_visible() || !w.is_enabled()) return;
+    if (w.focus_policy() == FocusPolicy::Tab || w.focus_policy() == FocusPolicy::Strong)
+        out.push_back(&w);
+    for (auto& child : w.children())
+        collect_tab_widgets(*child, out);
+}
+
+void Window::focus_next() {
+    std::vector<Widget*> order;
+    collect_tab_widgets(*impl_->root, order);
+    if (order.empty()) return;
+    auto it = std::find(order.begin(), order.end(), focused_);
+    if (it == order.end() || std::next(it) == order.end())
+        set_focused_widget(order.front());
+    else
+        set_focused_widget(*std::next(it));
+}
+
+void Window::focus_prev() {
+    std::vector<Widget*> order;
+    collect_tab_widgets(*impl_->root, order);
+    if (order.empty()) return;
+    auto it = std::find(order.begin(), order.end(), focused_);
+    if (it == order.end() || it == order.begin())
+        set_focused_widget(order.back());
+    else
+        set_focused_widget(*std::prev(it));
+}
+
+// ── Event dispatch ────────────────────────────────────────────────────────────
+
 void Window::process_sdl_event(void* raw_event) {
     if (!raw_event) return;
     auto& ev = *static_cast<SDL_Event*>(raw_event);
 
-    // Only handle events for this window
     auto this_id = sdl_window_id();
 
     switch (ev.type) {
@@ -315,7 +409,6 @@ void Window::process_sdl_event(void* raw_event) {
             impl_->root->set_size(new_size);
             impl_->resize_surface();
             on_resized.emit(new_size);
-            impl_->paint_frame();
         }
         break;
 
@@ -329,25 +422,39 @@ void Window::process_sdl_event(void* raw_event) {
         impl_->paint_frame();
         break;
 
+    case SDL_EVENT_WINDOW_FOCUS_GAINED:
+        if (ev.window.windowID != this_id) break;
+        on_focus_gained.emit();
+        break;
+
+    case SDL_EVENT_WINDOW_FOCUS_LOST:
+        if (ev.window.windowID != this_id) break;
+        on_focus_lost.emit();
+        break;
+
     case SDL_EVENT_MOUSE_BUTTON_DOWN:
     case SDL_EVENT_MOUSE_BUTTON_UP:
         if (ev.button.windowID != this_id) break;
         {
             MouseEvent me;
-            me.pos        = {int(ev.button.x), int(ev.button.y)};
-            me.global_pos = me.pos; // TODO: convert
-            me.button     = MouseButton(ev.button.button);
+            me.pos = {int(ev.button.x), int(ev.button.y)};
+            {
+                int wx = 0, wy = 0;
+                SDL_GetWindowPosition(impl_->sdl_window, &wx, &wy);
+                me.global_pos = {me.pos.x + wx, me.pos.y + wy};
+            }
+            me.button      = MouseButton(ev.button.button);
             me.click_count = ev.button.clicks;
 
-            Widget* target = impl_->root->hit_test(me.pos);
+            Widget* target = captured_
+                ? captured_
+                : impl_->root->hit_test(me.pos);
             if (!target) target = impl_->root.get();
 
             if (ev.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
                 set_focused_widget(target->focus_policy() != FocusPolicy::None ? target : nullptr);
-                if (ev.button.clicks == 2)
-                    target->on_double_click(me);
-                else
-                    target->on_mouse_press(me);
+                if (ev.button.clicks == 2) target->on_double_click(me);
+                else                       target->on_mouse_press(me);
             } else {
                 target->on_mouse_release(me);
             }
@@ -360,18 +467,28 @@ void Window::process_sdl_event(void* raw_event) {
             MouseEvent me;
             me.pos   = {int(ev.motion.x), int(ev.motion.y)};
             me.delta = {ev.motion.xrel, ev.motion.yrel};
+            {
+                int wx = 0, wy = 0;
+                SDL_GetWindowPosition(impl_->sdl_window, &wx, &wy);
+                me.global_pos = {me.pos.x + wx, me.pos.y + wy};
+            }
 
-            Widget* target = impl_->root->hit_test(me.pos);
+            Widget* target = captured_
+                ? captured_
+                : impl_->root->hit_test(me.pos);
             if (!target) target = impl_->root.get();
 
             if (target != hovered_) {
                 if (hovered_) hovered_->on_mouse_leave(me);
                 hovered_ = target;
-                if (hovered_) hovered_->on_mouse_enter(me);
+                if (hovered_) {
+                    hovered_->on_mouse_enter(me);
+                    apply_cursor(hovered_->cursor());
+                }
             }
             target->on_mouse_move(me);
 
-            // Tooltip: re-arm on each new widget or significant cursor move
+            // Tooltip
             std::string tip = target ? std::string{target->tooltip()} : std::string{};
             if (tip.empty()) {
                 impl_->disarm_tooltip();
@@ -379,8 +496,7 @@ void Window::process_sdl_event(void* raw_event) {
                 PointI cur{int(ev.motion.x), int(ev.motion.y)};
                 PointI prev = impl_->tooltip_pos;
                 int dx = cur.x - prev.x, dy = cur.y - prev.y;
-                bool moved_far = (dx*dx + dy*dy) > 16;
-                if (moved_far || impl_->tooltip_text != tip)
+                if ((dx*dx + dy*dy) > 16 || impl_->tooltip_text != tip)
                     impl_->arm_tooltip(tip, cur);
             }
         }
@@ -395,7 +511,9 @@ void Window::process_sdl_event(void* raw_event) {
             me.pos   = {int(mx), int(my)};
             me.wheel = {ev.wheel.x, ev.wheel.y};
 
-            Widget* target = impl_->root->hit_test(me.pos);
+            Widget* target = captured_
+                ? captured_
+                : impl_->root->hit_test(me.pos);
             if (target) target->on_mouse_scroll(me);
         }
         break;
@@ -403,7 +521,7 @@ void Window::process_sdl_event(void* raw_event) {
     case SDL_EVENT_KEY_DOWN:
     case SDL_EVENT_KEY_UP:
         if (ev.key.windowID != this_id) break;
-        if (focused_) {
+        {
             KeyEvent ke;
             ke.key       = Key(ev.key.key);
             ke.scancode  = ev.key.scancode;
@@ -413,10 +531,24 @@ void Window::process_sdl_event(void* raw_event) {
             ke.mods.alt   = (ev.key.mod & SDL_KMOD_ALT)   != 0;
             ke.mods.meta  = (ev.key.mod & SDL_KMOD_GUI)   != 0;
 
-            if (ev.type == SDL_EVENT_KEY_DOWN)
-                focused_->on_key_press(ke);
-            else
-                focused_->on_key_release(ke);
+            if (ev.type == SDL_EVENT_KEY_DOWN) {
+                // Tab navigation
+                if (ev.key.key == SDLK_TAB && !ke.mods.ctrl && !ke.mods.alt) {
+                    if (ke.mods.shift) focus_prev(); else focus_next();
+                    break;
+                }
+                // Check window shortcuts before dispatching to focused widget
+                for (auto& sc : shortcuts_) {
+                    if (sc.key == ke.key && sc.mods == ke.mods) {
+                        sc.fn();
+                        goto done_key;
+                    }
+                }
+                if (focused_) focused_->on_key_press(ke);
+            } else {
+                if (focused_) focused_->on_key_release(ke);
+            }
+            done_key:;
         }
         break;
 

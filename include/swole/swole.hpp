@@ -25,12 +25,14 @@
 #include "widgets/slider.hpp"
 #include "widgets/spin_box.hpp"
 #include "widgets/splitter.hpp"
+#include "widgets/status_bar.hpp"
 #include "widgets/tab_widget.hpp"
 #include "widgets/text_edit.hpp"
 #include "widgets/tool_bar.hpp"
 #include "widgets/tree_view.hpp"
 
 #include "layout/box_layout.hpp"
+#include "layout/form_layout.hpp"
 #include "layout/grid_layout.hpp"
 #include "layout/layout.hpp"
 

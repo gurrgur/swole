@@ -87,9 +87,34 @@ public:
     [[nodiscard]] Widget* focused_widget() const { return focused_; }
     void set_focused_widget(Widget* w);
 
+    // ── Shortcuts ──
+
+    // Register a window-local keyboard shortcut fired before widget key dispatch.
+    // Returns an opaque ID for later removal.
+    uint32_t add_shortcut(Key key, KeyMods mods, std::function<void()> fn);
+    void     remove_shortcut(uint32_t id);
+
+    // ── Mouse capture ──
+
+    // Route all mouse events to w regardless of pointer position (e.g. during drag).
+    void capture_mouse(Widget* w);
+    void release_capture();
+    [[nodiscard]] Widget* mouse_capture() const { return captured_; }
+
+    // ── Cursor ──
+
+    // Apply a cursor shape immediately (called by Widget::set_cursor).
+    void apply_cursor(CursorShape shape);
+
+    // ── Tab navigation ──
+
+    // Move keyboard focus to the next/previous widget in tab order.
+    void focus_next();
+    void focus_prev();
+
     // ── Signals ──
 
-    Signal<> on_close;          // emitted before the window actually closes
+    Signal<> on_close;
     Signal<SizeI> on_resized;
     Signal<PointI> on_moved;
     Signal<> on_focus_gained;
@@ -97,7 +122,6 @@ public:
 
     // ── Rendering ──
 
-    // Force an immediate repaint (bypasses invalidation coalescing).
     void repaint_now();
 
     // Internal: called by Application to process SDL events for this window.
@@ -112,8 +136,22 @@ private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
 
-    Widget* focused_{nullptr};
-    Widget* hovered_{nullptr};
+    Widget*  focused_{nullptr};
+    Widget*  hovered_{nullptr};
+    Widget*  captured_{nullptr};
+
+    // Shortcut table
+    struct Shortcut { uint32_t id; Key key; KeyMods mods; std::function<void()> fn; };
+    std::vector<Shortcut> shortcuts_;
+    uint32_t next_shortcut_id_{1};
+
+    // SDL cursor cache
+    void* sdl_cursors_[10]{};  // one per CursorShape
+    void  init_cursors();
+    void  free_cursors();
+
+    // Tab order helpers
+    static void collect_tab_widgets(Widget& root, std::vector<Widget*>& out);
 };
 
 } // namespace swole

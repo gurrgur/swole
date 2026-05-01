@@ -59,12 +59,14 @@ add_library(swole STATIC
 
     # layout
     src/layout/box_layout.cpp
+    src/layout/form_layout.cpp
     src/layout/grid_layout.cpp
 
     # extra widgets
     src/widgets/group_box.cpp
     src/widgets/spin_box.cpp
     src/widgets/splitter.cpp
+    src/widgets/status_bar.cpp
     src/widgets/tool_bar.cpp
 )
 

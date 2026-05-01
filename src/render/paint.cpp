@@ -2,6 +2,9 @@
 
 #include "include/core/SkPaint.h"
 #include "include/core/SkColor.h"
+#include "include/effects/SkDashPathEffect.h"
+
+#include <vector>
 
 namespace swole {
 
@@ -13,10 +16,11 @@ inline Color   from_sk(SkColor c) {
 } // namespace
 
 struct Paint::Impl {
-    SkPaint fill;
-    SkPaint stroke;
-    bool    has_fill{true};
-    bool    has_stroke{false};
+    SkPaint  fill;
+    SkPaint  stroke;
+    bool     has_fill{true};
+    bool     has_stroke{false};
+    FillRule fill_rule{FillRule::Winding};
 };
 
 Paint::Paint()  : impl_{std::make_unique<Impl>()} {
@@ -91,14 +95,47 @@ Paint& Paint::set_blend_mode(BlendMode m)  {
     return *this;
 }
 Paint& Paint::set_fill_rule(FillRule r) {
-    (void)r; // applied per draw-call via SkPath fill type
+    impl_->fill_rule = r;
     return *this;
 }
+
+Paint& Paint::set_dash_pattern(std::span<const float> intervals, float offset) {
+    if (intervals.empty()) {
+        impl_->stroke.setPathEffect(nullptr);
+    } else {
+        impl_->stroke.setPathEffect(
+            SkDashPathEffect::Make(intervals.data(), int(intervals.size()), offset));
+    }
+    return *this;
+}
+
+namespace {
+StrokeCap  from_sk_cap(SkPaint::Cap c)  {
+    switch (c) {
+    case SkPaint::kRound_Cap:  return StrokeCap::Round;
+    case SkPaint::kSquare_Cap: return StrokeCap::Square;
+    default:                   return StrokeCap::Butt;
+    }
+}
+StrokeJoin from_sk_join(SkPaint::Join j) {
+    switch (j) {
+    case SkPaint::kRound_Join: return StrokeJoin::Round;
+    case SkPaint::kBevel_Join: return StrokeJoin::Bevel;
+    default:                   return StrokeJoin::Miter;
+    }
+}
+BlendMode from_sk_blend(SkBlendMode m) { return static_cast<BlendMode>(m); }
+} // namespace
 
 Color      Paint::fill_color()   const { return from_sk(impl_->fill.getColor()); }
 Color      Paint::stroke_color() const { return from_sk(impl_->stroke.getColor()); }
 float      Paint::stroke_width() const { return impl_->stroke.getStrokeWidth(); }
 bool       Paint::anti_alias()   const { return impl_->fill.isAntiAlias(); }
+StrokeCap  Paint::stroke_cap()   const { return from_sk_cap(impl_->stroke.getStrokeCap()); }
+StrokeJoin Paint::stroke_join()  const { return from_sk_join(impl_->stroke.getStrokeJoin()); }
+float      Paint::miter_limit()  const { return impl_->stroke.getStrokeMiter(); }
+BlendMode  Paint::blend_mode()   const { return from_sk_blend(impl_->fill.getBlendMode()); }
+FillRule   Paint::fill_rule()    const { return impl_->fill_rule; }
 
 void* Paint::native_fill_handle()   const { return &impl_->fill; }
 void* Paint::native_stroke_handle() const { return &impl_->stroke; }

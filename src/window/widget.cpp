@@ -1,4 +1,5 @@
 #include "swole/window/widget.hpp"
+#include "swole/window/window.hpp"
 #include "swole/layout/layout.hpp"
 
 namespace swole {
@@ -79,17 +80,25 @@ bool Widget::is_visible_to_root() const {
 }
 
 void Widget::request_focus() {
-    // TODO: delegate to Window
-    focused_ = true;
+    if (Window* w = window())
+        w->set_focused_widget(this);
+    else
+        focused_ = true; // not yet attached to a window
 }
 
 void Widget::clear_focus() {
-    focused_ = false;
+    if (Window* w = window())
+        w->set_focused_widget(nullptr);
+    else
+        focused_ = false;
 }
 
 void Widget::set_cursor(CursorShape shape) {
+    if (cursor_shape_ == shape) return;
     cursor_shape_ = shape;
-    // TODO: update SDL cursor when this widget is hovered
+    // If this widget is currently hovered, immediately apply the SDL cursor.
+    if (Window* w = window())
+        w->apply_cursor(shape);
 }
 
 void Widget::set_layout(std::unique_ptr<Layout> layout) {

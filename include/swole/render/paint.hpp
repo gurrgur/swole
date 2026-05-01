@@ -2,6 +2,7 @@
 
 #include "../core/types.hpp"
 #include <memory>
+#include <span>
 
 namespace swole {
 
@@ -46,6 +47,9 @@ public:
     Paint& set_alpha(float a);   // 0-1 multiplier applied on top of color alpha
     Paint& set_blend_mode(BlendMode mode);
     Paint& set_fill_rule(FillRule rule);
+    // Dash pattern: alternating on/off lengths in stroke units; offset shifts phase.
+    // Pass empty span to clear dashing.
+    Paint& set_dash_pattern(std::span<const float> intervals, float offset = 0.f);
 
     [[nodiscard]] Color      fill_color()    const;
     [[nodiscard]] Color      stroke_color()  const;

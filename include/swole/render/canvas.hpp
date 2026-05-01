@@ -104,6 +104,30 @@ public:
     void draw_points(std::span<const PointF> pts, const Paint& p);
     void draw_polygon(std::span<const PointF> pts, bool closed, const Paint& p);
 
+    // ── Gradients ──
+    // Fill a rectangle with a linear gradient between two endpoints.
+    // colors and stops must be the same length; stops may be empty (evenly distributed).
+    void fill_linear_gradient(RectF dst, PointF from, PointF to,
+                              std::span<const Color> colors,
+                              std::span<const float> stops = {});
+    // Fill a rectangle with a radial gradient.
+    void fill_radial_gradient(RectF dst, PointF center, float radius,
+                              std::span<const Color> colors,
+                              std::span<const float> stops = {});
+    // Fill a rounded rect with a linear gradient.
+    void fill_round_rect_linear_gradient(RectF dst, float rx, float ry,
+                                         PointF from, PointF to,
+                                         std::span<const Color> colors,
+                                         std::span<const float> stops = {});
+
+    // ── Shadows ──
+    // Draw a soft drop shadow beneath a (possibly rounded) rectangle.
+    // The shadow is drawn before the caller's content, so call this first.
+    void draw_shadow(RectF r, float blur_radius,
+                     float dx = 0.f, float dy = 2.f,
+                     Color color = {0, 0, 0, 80},
+                     float corner_radius = 0.f);
+
     // ── Images ──
 
     void draw_image(const Image& img, float x, float y, const Paint* p = nullptr);
