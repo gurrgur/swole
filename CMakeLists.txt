@@ -39,6 +39,27 @@ target_include_directories(swole_swell_core
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
+add_library(Swell SHARED
+    src/swell/swell_dispatch.cpp
+    $<TARGET_OBJECTS:swole_swell_core>
+)
+
+add_library(swole::Swell ALIAS Swell)
+
+set_target_properties(Swell PROPERTIES
+    OUTPUT_NAME "Swell"
+)
+
+target_include_directories(Swell
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+target_link_libraries(Swell
+    PRIVATE
+        ${CMAKE_DL_LIBS}
+)
+
 # ── Library: swole ───────────────────────────────────────────────────────────
 
 add_library(swole STATIC

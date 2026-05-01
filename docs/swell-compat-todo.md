@@ -12,19 +12,19 @@ The reference signatures live in the local WDL checkout:
 
 ## Current Status
 
-- [ ] No `libSwell.so` target exists in this repo yet.
-- [ ] No `SWELLAPI_GetFunc`/`SWELL_set_app_main` ABI exports exist yet.
+- [x] `libSwell.so` target exists in this repo.
+- [x] `SWELLAPI_GetFunc`/`SWELL_set_app_main` ABI exports exist.
 - [ ] The existing `swole` widget library is not yet wired to HWND/HDC/HMENU
       compatibility handles.
 
 ## Loader And Drop-In ABI
 
-- [ ] Build a shared library named `libSwell.so`.
-- [ ] Export `SWELLAPI_GetFunc`.
-- [ ] Export `SWELL_set_app_main`.
-- [ ] Implement a name-to-function dispatch table for every REAPER-requested API.
+- [x] Build a shared library named `libSwell.so`.
+- [x] Export `SWELLAPI_GetFunc`.
+- [x] Export `SWELL_set_app_main`.
+- [x] Implement a name-to-function dispatch table for every REAPER-requested API.
 - [x] Add startup glue for `SWELL_initargs` and `SWELL_RunMessageLoop`.
-- [ ] Keep unresolved APIs visible through logging/counters during bring-up.
+- [x] Keep unresolved APIs visible through logging/counters during bring-up.
 
 ## Core Utilities And Files
 
