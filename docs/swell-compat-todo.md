@@ -23,22 +23,23 @@ The reference signatures live in the local WDL checkout:
 - [ ] Export `SWELLAPI_GetFunc`.
 - [ ] Export `SWELL_set_app_main`.
 - [ ] Implement a name-to-function dispatch table for every REAPER-requested API.
-- [ ] Add startup glue for `SWELL_initargs` and `SWELL_RunMessageLoop`.
+- [x] Add startup glue for `SWELL_initargs` and `SWELL_RunMessageLoop`.
 - [ ] Keep unresolved APIs visible through logging/counters during bring-up.
 
 ## Core Utilities And Files
 
-- [ ] `lstrcpyn`, `MulDiv`, `Sleep`, `GetTickCount`, `GetFileTime`
-- [ ] `WritePrivateProfileString`, `GetPrivateProfileString`,
+- [x] `lstrcpyn`, `MulDiv`, `Sleep`, `GetTickCount`, `GetFileTime`
+- [x] `WritePrivateProfileString`, `GetPrivateProfileString`,
       `GetPrivateProfileInt`, `GetPrivateProfileStruct`,
       `WritePrivateProfileStruct`, `WritePrivateProfileSection`,
       `GetPrivateProfileSection`
-- [ ] `GetModuleFileName`, `GetTempPath`, `ShellExecute`
+- [x] `GetModuleFileName`, `GetTempPath`, `ShellExecute`
 - [ ] `BrowseForFiles`, `BrowseForSaveFile`, `BrowseForDirectory`,
       `BrowseFile_SetTemplate`
-- [ ] `SWELL_PtInRect`, `WinOffsetRect`, `WinSetRect`, `WinUnionRect`,
+- [x] `SWELL_PtInRect`, `WinOffsetRect`, `WinSetRect`, `WinUnionRect`,
       `WinIntersectRect`
-- [ ] `SWELL_GenerateGUID`, `_controlfp`, `AddFontResourceEx`
+- [ ] `AddFontResourceEx`
+- [x] `SWELL_GenerateGUID`, `_controlfp`
 
 ## Windows, Dialogs, And Controls
 
@@ -161,18 +162,19 @@ The reference signatures live in the local WDL checkout:
 
 ## Clipboard, Threads, Processes, Drag/Drop, Monitors
 
-- [ ] Clipboard/global memory: `OpenClipboard`, `CloseClipboard`,
+- [ ] Clipboard: `OpenClipboard`, `CloseClipboard`,
       `GetClipboardData`, `EmptyClipboard`, `SetClipboardData`,
-      `RegisterClipboardFormat`, `EnumClipboardFormats`, `GlobalAlloc`,
-      `GlobalLock`, `GlobalSize`, `GlobalUnlock`, `GlobalFree`
+      `RegisterClipboardFormat`, `EnumClipboardFormats`
+- [x] Global memory: `GlobalAlloc`, `GlobalLock`, `GlobalSize`,
+      `GlobalUnlock`, `GlobalFree`
 - [ ] Threads/events/handles: `CreateThread`, `CreateEvent`,
       `CreateEventAsSocket`, `GetCurrentThreadId`, `WaitForSingleObject`,
       `WaitForAnySocketObject`, `CloseHandle`, `SetThreadPriority`,
       `SetEvent`, `ResetEvent`
-- [ ] Processes/libraries: `SWELL_CreateProcessFromPID`,
-      `SWELL_CreateProcess`, `SWELL_GetProcessExitCode`,
-      `LoadLibraryGlobals`, `LoadLibrary`, `GetProcAddress`, `FreeLibrary`,
-      `SWELL_GetBundle`
+- [ ] Processes: `SWELL_CreateProcessFromPID`,
+      `SWELL_CreateProcess`, `SWELL_GetProcessExitCode`
+- [x] Libraries: `LoadLibraryGlobals`, `LoadLibrary`, `GetProcAddress`,
+      `FreeLibrary`, `SWELL_GetBundle`
 - [ ] Drag/drop: `DragQueryPoint`, `DragFinish`, `DragQueryFile`,
       `SWELL_InitiateDragDrop`, `SWELL_FinishDragDrop`,
       `SWELL_InitiateDragDropOfFileList`

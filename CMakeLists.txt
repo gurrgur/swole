@@ -24,6 +24,21 @@ include(FetchSDL3)
 # Point SKIA_DIR and SKIA_BUILD_DIR at your build, or set them in a toolchain file.
 find_package(Skia REQUIRED)
 
+# ── SWELL compatibility objects ───────────────────────────────────────────────
+
+add_library(swole_swell_core OBJECT
+    src/swell/swell_core.cpp
+)
+
+set_target_properties(swole_swell_core PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+)
+
+target_include_directories(swole_swell_core
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
 # ── Library: swole ───────────────────────────────────────────────────────────
 
 add_library(swole STATIC
