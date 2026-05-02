@@ -152,6 +152,12 @@ public:
     void invalidate(RectI region = {});
     void invalidate_all() { invalidate(local_bounds()); }
 
+    // ── Native handle ──
+
+    // Optional opaque handle for SWELL bridge compatibility.
+    void* native_handle() const { return native_handle_; }
+    void  set_native_handle(void* h) { native_handle_ = h; }
+
     // ── Event handlers (override in subclasses) ──
 
     virtual void on_paint(Canvas& canvas);
@@ -213,6 +219,8 @@ private:
     CursorShape  cursor_shape_{CursorShape::Arrow};
 
     std::unique_ptr<Layout> layout_;
+
+    void* native_handle_{nullptr};
 };
 
 } // namespace swole

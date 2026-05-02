@@ -41,6 +41,10 @@ target_include_directories(swole_swell_core
 
 add_library(Swell SHARED
     src/swell/swell_dispatch.cpp
+    src/swell/swell_widget_host.cpp
+    src/swell/swell_window.cpp
+    src/swell/swell_messages.cpp
+    src/swell/swell_menu.cpp
     $<TARGET_OBJECTS:swole_swell_core>
 )
 
@@ -58,6 +62,7 @@ target_include_directories(Swell
 target_link_libraries(Swell
     PRIVATE
         ${CMAKE_DL_LIBS}
+        swole
 )
 
 # ── Library: swole ───────────────────────────────────────────────────────────
@@ -105,6 +110,14 @@ add_library(swole STATIC
     src/widgets/splitter.cpp
     src/widgets/status_bar.cpp
     src/widgets/tool_bar.cpp
+)
+
+set_target_properties(swole PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+)
+
+set_target_properties(swole PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
 )
 
 add_library(swole::swole ALIAS swole)

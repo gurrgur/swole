@@ -29,6 +29,7 @@ using HDC = struct HDC__*;
 using HGDIOBJ = void*;
 using HCURSOR = void*;
 using HDROP = void*;
+using HRGN = void*;
 
 struct POINT {
     LONG x;

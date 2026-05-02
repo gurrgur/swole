@@ -44,6 +44,112 @@ void* SWELL_GetBundle(HINSTANCE hInst);
 unsigned int _controlfp(unsigned int flag, unsigned int mask);
 bool SWELL_GenerateGUID(void* g);
 
+HWND CreateWindowEx(DWORD exstyle, const char* class_name, const char* window_name, DWORD style, int x, int y, int w, int h, HWND parent, HMENU menu, HINSTANCE, LPVOID param);
+BOOL DestroyWindow(HWND hwnd);
+BOOL ShowWindow(HWND hwnd, int cmd);
+BOOL IsWindow(HWND hwnd);
+BOOL IsWindowVisible(HWND hwnd);
+BOOL EnableWindow(HWND hwnd, BOOL enable);
+BOOL IsWindowEnabled(HWND hwnd);
+HWND GetDlgItem(HWND parent, int id);
+BOOL IsChild(HWND parent, HWND child);
+void SetWindowText(HWND hwnd, const char* text);
+int GetWindowText(HWND hwnd, char* buf, int maxlen);
+int GetWindowTextLength(HWND hwnd);
+void SetDlgItemText(HWND hwnd, int id, const char* text);
+int GetDlgItemText(HWND hwnd, int id, char* buf, int maxlen);
+BOOL GetClientRect(HWND hwnd, RECT* r);
+BOOL GetWindowRect(HWND hwnd, RECT* r);
+BOOL GetWindowContentViewRect(HWND hwnd, RECT* r);
+BOOL SetWindowPos(HWND hwnd, HWND insert_after, int x, int y, int cx, int cy, UINT flags);
+BOOL MoveWindow(HWND hwnd, int x, int y, int w, int h, BOOL repaint);
+BOOL InvalidateRect(HWND hwnd, const RECT* r, BOOL erase);
+BOOL UpdateWindow(HWND hwnd);
+LONG_PTR GetWindowLongPtr(HWND hwnd, int index);
+LONG_PTR SetWindowLongPtr(HWND hwnd, int index, LONG_PTR value);
+LONG GetWindowLong(HWND hwnd, int index);
+LONG SetWindowLong(HWND hwnd, int index, LONG value);
+BOOL SetParent(HWND hwnd, HWND new_parent);
+HWND GetWindow(HWND hwnd, UINT cmd);
+HWND GetParent(HWND hwnd);
+HWND GetTopWindow(HWND hwnd);
+HWND GetNextWindow(HWND hwnd, UINT cmd);
+BOOL ClientToScreen(HWND hwnd, POINT* p);
+BOOL ScreenToClient(HWND hwnd, POINT* p);
+HWND SetFocus(HWND hwnd);
+HWND GetFocus();
+HWND SetForegroundWindow(HWND hwnd);
+HWND GetForegroundWindow();
+HWND SetCapture(HWND hwnd);
+HWND GetCapture();
+BOOL ReleaseCapture();
+BOOL EnumChildWindows(HWND parent, BOOL (*callback)(HWND, LPARAM), LPARAM lp);
+BOOL EnumWindows(BOOL (*callback)(HWND, LPARAM), LPARAM lp);
+HWND FindWindowEx(HWND parent, HWND child_after, const char* class_name, const char* window_name);
+HWND WindowFromPoint(POINT p);
+BOOL ScrollWindow(HWND hwnd, int dx, int dy, const RECT* prc_scroll, const RECT* prc_clip);
+HANDLE GetProp(HWND hwnd, const char* name);
+BOOL SetProp(HWND hwnd, const char* name, HANDLE value);
+HANDLE RemoveProp(HWND hwnd, const char* name);
+BOOL EnumPropsEx(HWND hwnd, BOOL (*callback)(HWND, const char*, HANDLE, LONG_PTR), LONG_PTR lp);
+HWND SetActiveWindow(HWND hwnd);
+HWND GetActiveWindow();
+BOOL BringWindowToTop(HWND hwnd);
+BOOL SetWindowRgn(HWND hwnd, HRGN hrgn, BOOL redraw);
+int GetWindowRgn(HWND hwnd, HRGN hrgn);
+BOOL IsIconic(HWND hwnd);
+BOOL IsZoomed(HWND hwnd);
+void SetWindowTextA(HWND hwnd, const char* text);
+int GetWindowTextA(HWND hwnd, char* buf, int maxlen);
+int GetWindowTextLengthA(HWND hwnd);
+
+LRESULT DefWindowProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp);
+LRESULT SendMessage(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp);
+LRESULT SendMessageTimeoutA(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp, UINT flags, UINT timeout, DWORD* result);
+LRESULT SendDlgItemMessageA(HWND parent, int id, UINT msg, WPARAM wp, LPARAM lp);
+LRESULT SendDlgItemMessage(HWND parent, int id, UINT msg, WPARAM wp, LPARAM lp);
+BOOL PostMessage(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp);
+void SWELL_BroadcastMessage(UINT msg, WPARAM wp, LPARAM lp);
+void SWELL_MessageQueue_Flush(HWND hwnd);
+void SWELL_MessageQueue_Clear(HWND hwnd);
+void SWELL_Internal_PostMessage_Init();
+UINT_PTR SetTimer(HWND hwnd, UINT_PTR id, UINT ms, TIMERPROC proc);
+BOOL KillTimer(HWND hwnd, UINT_PTR id);
+
+HMENU CreatePopupMenu();
+HMENU CreatePopupMenuEx(const char* title);
+HMENU CreateMenu();
+BOOL DestroyMenu(HMENU menu);
+HMENU GetSubMenu(HMENU menu, int pos);
+int GetMenuItemCount(HMENU menu);
+UINT GetMenuItemID(HMENU menu, int pos);
+BOOL SetMenuItemModifier(HMENU menu, UINT id, UINT flags, UINT modifier);
+BOOL SetMenuItemText(HMENU menu, UINT id, const char* text);
+BOOL EnableMenuItem(HMENU menu, UINT id, UINT flags);
+BOOL DeleteMenu(HMENU menu, UINT pos, UINT flags);
+BOOL CheckMenuItem(HMENU menu, UINT id, UINT flags);
+BOOL InsertMenuItem(HMENU menu, UINT pos, BOOL by_position, const void* info);
+BOOL SWELL_InsertMenu(HMENU menu, int pos, int flags, int id, const char* text);
+BOOL AppendMenu(HMENU menu, UINT flags, UINT id, const char* text);
+BOOL GetMenuItemInfo(HMENU menu, UINT item, BOOL by_position, void* info);
+BOOL SetMenuItemInfo(HMENU menu, UINT item, BOOL by_position, const void* info);
+BOOL DrawMenuBar(HWND hwnd);
+HMENU SWELL_LoadMenu(HINSTANCE inst, const char* name);
+BOOL TrackPopupMenu(HMENU menu, UINT flags, int x, int y, int reserved, HWND hwnd, const RECT* rect);
+BOOL TrackPopupMenuEx(HMENU menu, UINT flags, int x, int y, HWND hwnd, void* tp);
+void SWELL_SetMenuDestination(HMENU menu, HWND hwnd);
+HMENU SWELL_DuplicateMenu(HMENU menu);
+BOOL SetMenu(HWND hwnd, HMENU menu);
+HMENU GetMenu(HWND hwnd);
+HMENU SWELL_GetDefaultWindowMenu(HWND hwnd);
+void SWELL_SetDefaultWindowMenu(HWND hwnd, HMENU menu);
+HMENU SWELL_GetDefaultModalWindowMenu();
+void SWELL_SetDefaultModalWindowMenu(HMENU menu);
+HMENU SWELL_GetCurrentMenu();
+void SWELL_SetCurrentMenu(HMENU menu);
+void SWELL_Menu_AddMenuItem(HMENU menu, const char* text, int id);
+BOOL SWELL_GenerateMenuFromList(HMENU menu, const void* list);
+
 INT_PTR SWELL_unimplemented_stub() {
     return 0;
 }
@@ -82,56 +188,56 @@ ApiEntry kApiTable[] = {
     API_STUB(BrowseForSaveFile),
     API_STUB(BrowseForDirectory),
     API_STUB(BrowseFile_SetTemplate),
-    API_STUB(GetDlgItem),
-    API_STUB(ShowWindow),
-    API_STUB(DestroyWindow),
+    API_IMPL(GetDlgItem),
+    API_IMPL(ShowWindow),
+    API_IMPL(DestroyWindow),
     API_STUB(SWELL_GetGestureInfo),
     API_STUB(SWELL_HideApp),
-    API_STUB(SetDlgItemText),
+    API_IMPL(SetDlgItemText),
     API_STUB(SetDlgItemInt),
     API_STUB(GetDlgItemInt),
-    API_STUB(GetDlgItemText),
-    API_STUB(GetWindowTextLength),
+    API_IMPL(GetDlgItemText),
+    API_IMPL(GetWindowTextLength),
     API_STUB(CheckDlgButton),
     API_STUB(IsDlgButtonChecked),
-    API_STUB(EnableWindow),
-    API_STUB(SetFocus),
-    API_STUB(GetFocus),
-    API_STUB(SetForegroundWindow),
-    API_STUB(GetForegroundWindow),
-    API_STUB(SetCapture),
-    API_STUB(GetCapture),
-    API_STUB(ReleaseCapture),
-    API_STUB(IsChild),
-    API_STUB(SetParent),
-    API_STUB(GetWindow),
-    API_STUB(EnumWindows),
-    API_STUB(FindWindowEx),
-    API_STUB(ClientToScreen),
-    API_STUB(ScreenToClient),
-    API_STUB(GetWindowRect),
-    API_STUB(GetWindowContentViewRect),
-    API_STUB(GetClientRect),
-    API_STUB(WindowFromPoint),
+    API_IMPL(EnableWindow),
+    API_IMPL(SetFocus),
+    API_IMPL(GetFocus),
+    API_IMPL(SetForegroundWindow),
+    API_IMPL(GetForegroundWindow),
+    API_IMPL(SetCapture),
+    API_IMPL(GetCapture),
+    API_IMPL(ReleaseCapture),
+    API_IMPL(IsChild),
+    API_IMPL(SetParent),
+    API_IMPL(GetWindow),
+    API_IMPL(EnumWindows),
+    API_IMPL(FindWindowEx),
+    API_IMPL(ClientToScreen),
+    API_IMPL(ScreenToClient),
+    API_IMPL(GetWindowRect),
+    API_IMPL(GetWindowContentViewRect),
+    API_IMPL(GetClientRect),
+    API_IMPL(WindowFromPoint),
     API_IMPL(WinOffsetRect),
     API_IMPL(WinSetRect),
     API_IMPL(WinUnionRect),
     API_IMPL(WinIntersectRect),
-    API_STUB(SetWindowPos),
+    API_IMPL(SetWindowPos),
     API_STUB(SWELL_SetWindowLevel),
-    API_STUB(InvalidateRect),
-    API_STUB(UpdateWindow),
-    API_STUB(GetWindowLong),
-    API_STUB(SetWindowLong),
-    API_STUB(ScrollWindow),
-    API_STUB(EnumPropsEx),
-    API_STUB(GetProp),
-    API_STUB(SetProp),
-    API_STUB(RemoveProp),
-    API_STUB(IsWindowVisible),
-    API_STUB(IsWindow),
-    API_STUB(SetTimer),
-    API_STUB(KillTimer),
+    API_IMPL(InvalidateRect),
+    API_IMPL(UpdateWindow),
+    API_IMPL(GetWindowLong),
+    API_IMPL(SetWindowLong),
+    API_IMPL(ScrollWindow),
+    API_IMPL(EnumPropsEx),
+    API_IMPL(GetProp),
+    API_IMPL(SetProp),
+    API_IMPL(RemoveProp),
+    API_IMPL(IsWindowVisible),
+    API_IMPL(IsWindow),
+    API_IMPL(SetTimer),
+    API_IMPL(KillTimer),
     API_STUB(ListView_InsertColumn),
     API_STUB(ListView_DeleteColumn),
     API_STUB(ListView_SetColumn),
@@ -207,42 +313,45 @@ ApiEntry kApiTable[] = {
     API_STUB(SWELL_ModalWindowRun),
     API_STUB(SWELL_ModalWindowEnd),
     API_STUB(SWELL_CloseWindow),
-    API_STUB(CreatePopupMenu),
-    API_STUB(CreatePopupMenuEx),
-    API_STUB(DestroyMenu),
-    API_STUB(GetSubMenu),
-    API_STUB(GetMenuItemCount),
-    API_STUB(GetMenuItemID),
-    API_STUB(SetMenuItemModifier),
-    API_STUB(SetMenuItemText),
-    API_STUB(EnableMenuItem),
-    API_STUB(DeleteMenu),
-    API_STUB(CheckMenuItem),
-    API_STUB(InsertMenuItem),
-    API_STUB(SWELL_InsertMenu),
-    API_STUB(GetMenuItemInfo),
-    API_STUB(SetMenuItemInfo),
-    API_STUB(DrawMenuBar),
-    API_STUB(SWELL_LoadMenu),
-    API_STUB(TrackPopupMenu),
-    API_STUB(SWELL_SetMenuDestination),
-    API_STUB(SWELL_DuplicateMenu),
-    API_STUB(SetMenu),
-    API_STUB(GetMenu),
-    API_STUB(SWELL_GetDefaultWindowMenu),
-    API_STUB(SWELL_SetDefaultWindowMenu),
-    API_STUB(SWELL_GetCurrentMenu),
-    API_STUB(SWELL_SetCurrentMenu),
+    API_IMPL(CreatePopupMenu),
+    API_IMPL(CreatePopupMenuEx),
+    API_IMPL(DestroyMenu),
+    API_IMPL(GetSubMenu),
+    API_IMPL(GetMenuItemCount),
+    API_IMPL(GetMenuItemID),
+    API_IMPL(SetMenuItemModifier),
+    API_IMPL(SetMenuItemText),
+    API_IMPL(EnableMenuItem),
+    API_IMPL(DeleteMenu),
+    API_IMPL(CheckMenuItem),
+    API_IMPL(InsertMenuItem),
+    API_IMPL(SWELL_InsertMenu),
+    API_IMPL(GetMenuItemInfo),
+    API_IMPL(SetMenuItemInfo),
+    API_IMPL(DrawMenuBar),
+    API_IMPL(SWELL_LoadMenu),
+    API_IMPL(TrackPopupMenu),
+    API_IMPL(SWELL_SetMenuDestination),
+    API_IMPL(SWELL_DuplicateMenu),
+    API_IMPL(SetMenu),
+    API_IMPL(GetMenu),
+    API_IMPL(SWELL_GetDefaultWindowMenu),
+    API_IMPL(SWELL_SetDefaultWindowMenu),
+    API_IMPL(SWELL_GetDefaultModalWindowMenu),
+    API_IMPL(SWELL_SetDefaultModalWindowMenu),
+    API_IMPL(SWELL_GetCurrentMenu),
+    API_IMPL(SWELL_SetCurrentMenu),
     API_STUB(SWELL_DialogBox),
     API_STUB(SWELL_CreateDialog),
-    API_STUB(DefWindowProc),
+    API_IMPL(DefWindowProc),
     API_STUB(EndDialog),
     API_STUB(SWELL_GetDefaultButtonID),
-    API_STUB(SendMessage),
-    API_STUB(SWELL_BroadcastMessage),
-    API_STUB(PostMessage),
-    API_STUB(SWELL_MessageQueue_Flush),
-    API_STUB(SWELL_MessageQueue_Clear),
+    API_IMPL(SendMessage),
+    API_IMPL(SWELL_BroadcastMessage),
+    API_IMPL(PostMessage),
+    API_IMPL(SWELL_MessageQueue_Flush),
+    API_IMPL(SWELL_MessageQueue_Clear),
+    API_IMPL(SWELL_Internal_PostMessage_Init),
     API_STUB(SWELL_KeyToASCII),
     API_STUB(GetAsyncKeyState),
     API_STUB(GetCursorPos),
@@ -368,6 +477,27 @@ ApiEntry kApiTable[] = {
     API_STUB(SWELL_GetOSEvent),
     API_IMPL(SWELL_GenerateGUID),
     API_STUB(EnumChildWindows),
+    API_IMPL(SetWindowText),
+    API_IMPL(GetWindowText),
+    API_IMPL(SetWindowTextA),
+    API_IMPL(GetWindowTextA),
+    API_IMPL(GetWindowTextLengthA),
+    API_IMPL(GetParent),
+    API_IMPL(GetTopWindow),
+    API_IMPL(GetNextWindow),
+    API_IMPL(SetActiveWindow),
+    API_IMPL(GetActiveWindow),
+    API_IMPL(BringWindowToTop),
+    API_IMPL(SetWindowRgn),
+    API_IMPL(GetWindowRgn),
+    API_IMPL(IsIconic),
+    API_IMPL(IsZoomed),
+    API_IMPL(SendMessageTimeoutA),
+    API_IMPL(SendDlgItemMessageA),
+    API_IMPL(SendDlgItemMessage),
+    API_IMPL(AppendMenu),
+    API_IMPL(TrackPopupMenuEx),
+    API_IMPL(SWELL_Menu_AddMenuItem),
     API_STUB(SWELL_IsGroupBox),
     API_STUB(SWELL_IsButton),
     API_STUB(SWELL_IsStaticText),
@@ -375,19 +505,16 @@ ApiEntry kApiTable[] = {
     API_STUB(AddFontResourceEx),
     API_STUB(SWELL_ChooseColor),
     API_STUB(SWELL_ChooseFont),
-    API_STUB(IsWindowEnabled),
+    API_IMPL(IsWindowEnabled),
     API_STUB(GetClassName),
     API_STUB(SWELL_SetClassName),
     API_STUB(SWELL_DisableContextMenu),
     API_STUB(EnumDisplayMonitors),
     API_STUB(GetMonitorInfo),
     API_STUB(ListView_SetExtendedListViewStyleEx),
-    API_STUB(SWELL_GetDefaultModalWindowMenu),
-    API_STUB(SWELL_SetDefaultModalWindowMenu),
     API_STUB(SWELL_RegisterCustomControlCreator),
     API_STUB(SWELL_UnregisterCustomControlCreator),
     API_STUB(SWELL_InitiateDragDropOfFileList),
-    API_STUB(SWELL_Internal_PostMessage_Init),
     API_STUB(SWELL_SetListViewFastClickMask),
     API_STUB(SWELL_Register_Cursor_Resource),
 };
