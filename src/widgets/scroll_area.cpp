@@ -59,10 +59,10 @@ bool ScrollArea::needs_hbar() const {
 WidgetSizeHint ScrollArea::size_hint() const {
     if (content_) {
         auto h = content_->size_hint();
-        return {.preferred_size = {h.preferred_size.w + bar_size_,
+        return {.min_size = {}, .preferred_size = {h.preferred_size.w + bar_size_,
                                    h.preferred_size.h + bar_size_}};
     }
-    return {.preferred_size = {120, 80}};
+    return {.min_size = {}, .preferred_size = {120, 80}};
 }
 
 void ScrollArea::update_bars() {

@@ -19,7 +19,7 @@ void Label::set_font(Font f) {
 
 WidgetSizeHint Label::size_hint() const {
     SizeF sz = font_.measure_text(text_);
-    return {.preferred_size = {int(sz.w) + 4, int(sz.h) + 4}};
+    return {.min_size = {}, .preferred_size = {int(sz.w) + 4, int(sz.h) + 4}};
 }
 
 void Label::on_paint(Canvas& canvas) {

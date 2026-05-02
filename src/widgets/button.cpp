@@ -33,7 +33,7 @@ WidgetSizeHint Button::size_hint() const {
     SizeF text_sz = font_.measure_text(label_);
     int w = int(text_sz.w) + 24;
     int h = int(font_.metrics().line_height()) + 12;
-    return {.preferred_size = {std::max(w, 64), std::max(h, 24)}};
+    return {.min_size = {}, .preferred_size = {std::max(w, 64), std::max(h, 24)}};
 }
 
 void Button::on_paint(Canvas& canvas) {
@@ -120,8 +120,10 @@ void Button::on_mouse_leave(const MouseEvent&) {
 
 void Button::on_key_press(const KeyEvent& e) {
     if (e.key == Key::Space || e.key == Key::Return) {
-        on_mouse_press({.button = MouseButton::Left});
-        on_mouse_release({.pos = {0, 0}, .button = MouseButton::Left});
+        MouseEvent fake{};
+        fake.button = MouseButton::Left;
+        on_mouse_press(fake);
+        on_mouse_release(fake);
     }
 }
 

@@ -35,7 +35,7 @@ int main(int argc, char** argv) {
         auto* btn = row->emplace_child<Button>("Greet");
         btn->set_focus_policy(FocusPolicy::Click);
 
-        btn->on_clicked.connect([edit, sub]() {
+        (void)        (void)btn->on_clicked.connect([edit, sub]() {
             std::string name = edit->text();
             if (name.empty()) name = "world";
             sub->set_text("Hello, " + name + "!");
@@ -48,7 +48,7 @@ int main(int argc, char** argv) {
 
     auto* quit_btn = win.root().emplace_child<Button>("Quit");
     quit_btn->set_focus_policy(FocusPolicy::Click);
-    quit_btn->on_clicked.connect([] { Application::instance().quit(); });
+    (void)    (void)quit_btn->on_clicked.connect([] { Application::instance().quit(); });
 
     vbox->add_widget(heading);
     vbox->add_widget(sub);

@@ -112,7 +112,7 @@ void Widget::layout_children() {
 }
 
 WidgetSizeHint Widget::size_hint() const {
-    return {.preferred_size = size_};
+    return {.min_size = {}, .preferred_size = size_};
 }
 
 Widget* Widget::add_child(std::unique_ptr<Widget> child) {

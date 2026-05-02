@@ -425,8 +425,8 @@ std::optional<Color> choose_color(Window* parent, Color initial, bool show_alpha
     ok_btn->set_bounds({kW-162, kPickH+12, 72, 28});
     cn_btn->set_bounds({kW- 82, kPickH+12, 72, 28});
 
-    ok_btn->on_clicked.connect([&]{ dlg.close(); });
-    cn_btn->on_clicked.connect([&]{ cancelled = true; dlg.close(); });
+    (void)ok_btn->on_clicked.connect([&]{ dlg.close(); });
+    (void)cn_btn->on_clicked.connect([&]{ cancelled = true; dlg.close(); });
 
     dlg.show();
     modal_loop([&]{ return dlg.is_closed(); }, &dlg);
@@ -628,8 +628,8 @@ std::optional<FontDialogResult> choose_font(Window* parent,
     ok_btn->set_bounds({kW-162, kPickH+6, 72, 28});
     cn_btn->set_bounds({kW- 82, kPickH+6, 72, 28});
 
-    ok_btn->on_clicked.connect([&]{ dlg.close(); });
-    cn_btn->on_clicked.connect([&]{ cancelled = true; dlg.close(); });
+    (void)ok_btn->on_clicked.connect([&]{ dlg.close(); });
+    (void)cn_btn->on_clicked.connect([&]{ cancelled = true; dlg.close(); });
 
     dlg.show();
     modal_loop([&]{ return dlg.is_closed(); }, &dlg);

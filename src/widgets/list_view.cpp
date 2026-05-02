@@ -200,7 +200,6 @@ void ListView::on_paint(Canvas& canvas) {
     auto guard = canvas.scoped_save();
     canvas.clip_rect(r.inset(1.f));
 
-    auto m  = font_.metrics();
     float pad = 4.f;
 
     // ── Header ────────────────────────────────────────────────────────────────
@@ -210,7 +209,6 @@ void ListView::on_paint(Canvas& canvas) {
         canvas.draw_line(hr.x, hr.bottom() - .5f, hr.right(), hr.bottom() - .5f,
                          Paint::stroke(theme::border));
 
-        auto hm = header_font_.metrics();
         int col_x = -scroll_offset_x_;
         for (int c = 0; c < int(columns_.size()); ++c) {
             const auto& col = columns_[c];

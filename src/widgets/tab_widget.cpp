@@ -81,7 +81,7 @@ WidgetSizeHint TabWidget::size_hint() const {
         auto h = tabs_[current_].page->size_hint();
         page_hint = h.preferred_size;
     }
-    return {.preferred_size = {page_hint.w, page_hint.h + tab_bar_height_}};
+    return {.min_size = {}, .preferred_size = {page_hint.w, page_hint.h + tab_bar_height_}};
 }
 
 void TabWidget::layout_children() {
@@ -95,7 +95,6 @@ void TabWidget::layout_children() {
 void TabWidget::on_paint(Canvas& canvas) {
     RectF r{local_bounds()};
     Font  font = theme::default_font();
-    auto  m    = font.metrics();
 
     // Tab bar background
     canvas.draw_rect(RectF{tab_bar_rect()}, Paint::fill(theme::surface));
