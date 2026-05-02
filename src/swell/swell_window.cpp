@@ -685,4 +685,81 @@ int GetWindowTextLengthA(HWND hwnd) {
     return GetWindowTextLength(hwnd);
 }
 
+void EndDialog(HWND hwnd, int ret) {
+    auto* h = swole::swell::as_hwnd(hwnd);
+    if (!h) return;
+
+    h->longs.user_data = ret;
+    swole::swell::swell_send_message(hwnd, 0x0010, 0, 0);
+}
+
+void SWELL_CloseWindow(HWND hwnd) {
+    auto* h = swole::swell::as_hwnd(hwnd);
+    if (!h) return;
+
+    if (h->window) {
+        h->window->close();
+    } else {
+        DestroyWindow(hwnd);
+    }
+}
+
+BOOL CheckDlgButton(HWND hwnd, int idx, int check) {
+    HWND child = idx == 0 ? hwnd : GetDlgItem(hwnd, idx);
+    if (!child) return SWELL_FALSE;
+
+    swole::swell::swell_send_message(child, 0x00F1, check, 0);
+    return SWELL_TRUE;
+}
+
+int IsDlgButtonChecked(HWND hwnd, int idx) {
+    HWND child = idx == 0 ? hwnd : GetDlgItem(hwnd, idx);
+    if (!child) return 0;
+
+    return int(swole::swell::swell_send_message(child, 0x00F0, 0, 0));
+}
+
+BOOL SetDlgItemInt(HWND hwnd, int idx, int val, int issigned) {
+    char buf[64];
+    if (issigned)
+        std::snprintf(buf, sizeof(buf), "%d", val);
+    else
+        std::snprintf(buf, sizeof(buf), "%u", static_cast<unsigned>(val));
+    SetDlgItemText(hwnd, idx, buf);
+    return SWELL_TRUE;
+}
+
+int GetDlgItemInt(HWND hwnd, int idx, BOOL* translated, int issigned) {
+    char buf[256];
+    int len = GetDlgItemText(hwnd, idx, buf, sizeof(buf));
+    if (len == 0) {
+        if (translated) *translated = SWELL_FALSE;
+        return 0;
+    }
+
+    char* end = nullptr;
+    long result = issigned ? std::strtol(buf, &end, 10) : std::strtol(buf, &end, 10);
+
+    if (translated)
+        *translated = (*end == '\0' && *buf != '\0') ? SWELL_TRUE : SWELL_FALSE;
+
+    return int(result);
+}
+
+BOOL GetClassName(HWND hwnd, char* buf, int maxlen) {
+    auto* h = swole::swell::as_hwnd(hwnd);
+    if (!h || !buf || maxlen <= 0) return SWELL_FALSE;
+
+    int n = std::min<int>(maxlen - 1, int(h->class_name.size()));
+    if (n > 0) std::memcpy(buf, h->class_name.data(), size_t(n));
+    buf[n] = '\0';
+    return n > 0 ? SWELL_TRUE : SWELL_FALSE;
+}
+
+void SWELL_SetClassName(HWND hwnd, const char* name) {
+    auto* h = swole::swell::as_hwnd(hwnd);
+    if (!h) return;
+    h->class_name = name ? name : "";
+}
+
 }

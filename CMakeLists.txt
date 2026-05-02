@@ -45,6 +45,7 @@ add_library(Swell SHARED
     src/swell/swell_window.cpp
     src/swell/swell_messages.cpp
     src/swell/swell_menu.cpp
+    src/swell/swell_thread.cpp
     $<TARGET_OBJECTS:swole_swell_core>
 )
 

@@ -102,6 +102,27 @@ BOOL IsZoomed(HWND hwnd);
 void SetWindowTextA(HWND hwnd, const char* text);
 int GetWindowTextA(HWND hwnd, char* buf, int maxlen);
 int GetWindowTextLengthA(HWND hwnd);
+void EndDialog(HWND hwnd, int ret);
+void SWELL_CloseWindow(HWND hwnd);
+BOOL CheckDlgButton(HWND hwnd, int idx, int check);
+int IsDlgButtonChecked(HWND hwnd, int idx);
+BOOL SetDlgItemInt(HWND hwnd, int idx, int val, int issigned);
+int GetDlgItemInt(HWND hwnd, int idx, BOOL* translated, int issigned);
+BOOL GetClassName(HWND hwnd, char* buf, int maxlen);
+void SWELL_SetClassName(HWND hwnd, const char* name);
+HANDLE CreateThread(void* TA, DWORD stackSize, DWORD (*ThreadProc)(LPVOID), LPVOID parm, DWORD cf, DWORD* tidOut);
+HANDLE CreateEvent(void* SA, BOOL manualReset, BOOL initialSig, const char* ignored);
+HANDLE CreateEventAsSocket(void* SA, BOOL manualReset, BOOL initialSig, const char* ignored);
+DWORD GetCurrentThreadId();
+DWORD WaitForSingleObject(HANDLE hand, DWORD msTO);
+DWORD WaitForAnySocketObject(int numObjs, HANDLE* objs, DWORD msTO);
+BOOL CloseHandle(HANDLE hand);
+BOOL SetThreadPriority(HANDLE evt, int prio);
+BOOL SetEvent(HANDLE evt);
+BOOL ResetEvent(HANDLE evt);
+HANDLE SWELL_CreateProcessFromPID(int pid);
+HANDLE SWELL_CreateProcess(const char* exe, int nparams, const char** params);
+int SWELL_GetProcessExitCode(HANDLE hand);
 
 LRESULT DefWindowProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp);
 LRESULT SendMessage(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp);
@@ -194,12 +215,12 @@ ApiEntry kApiTable[] = {
     API_STUB(SWELL_GetGestureInfo),
     API_STUB(SWELL_HideApp),
     API_IMPL(SetDlgItemText),
-    API_STUB(SetDlgItemInt),
-    API_STUB(GetDlgItemInt),
+    API_IMPL(SetDlgItemInt),
+    API_IMPL(GetDlgItemInt),
     API_IMPL(GetDlgItemText),
     API_IMPL(GetWindowTextLength),
-    API_STUB(CheckDlgButton),
-    API_STUB(IsDlgButtonChecked),
+    API_IMPL(CheckDlgButton),
+    API_IMPL(IsDlgButtonChecked),
     API_IMPL(EnableWindow),
     API_IMPL(SetFocus),
     API_IMPL(GetFocus),
@@ -312,7 +333,7 @@ ApiEntry kApiTable[] = {
     API_STUB(SWELL_ModalWindowStart),
     API_STUB(SWELL_ModalWindowRun),
     API_STUB(SWELL_ModalWindowEnd),
-    API_STUB(SWELL_CloseWindow),
+    API_IMPL(SWELL_CloseWindow),
     API_IMPL(CreatePopupMenu),
     API_IMPL(CreatePopupMenuEx),
     API_IMPL(DestroyMenu),
@@ -344,7 +365,7 @@ ApiEntry kApiTable[] = {
     API_STUB(SWELL_DialogBox),
     API_STUB(SWELL_CreateDialog),
     API_IMPL(DefWindowProc),
-    API_STUB(EndDialog),
+    API_IMPL(EndDialog),
     API_STUB(SWELL_GetDefaultButtonID),
     API_IMPL(SendMessage),
     API_IMPL(SWELL_BroadcastMessage),
@@ -377,19 +398,19 @@ ApiEntry kApiTable[] = {
     API_IMPL(GlobalSize),
     API_IMPL(GlobalUnlock),
     API_IMPL(GlobalFree),
-    API_STUB(CreateThread),
-    API_STUB(CreateEvent),
-    API_STUB(CreateEventAsSocket),
-    API_STUB(GetCurrentThreadId),
-    API_STUB(WaitForSingleObject),
-    API_STUB(WaitForAnySocketObject),
-    API_STUB(CloseHandle),
-    API_STUB(SetThreadPriority),
-    API_STUB(SetEvent),
-    API_STUB(ResetEvent),
-    API_STUB(SWELL_CreateProcessFromPID),
-    API_STUB(SWELL_CreateProcess),
-    API_STUB(SWELL_GetProcessExitCode),
+    API_IMPL(CreateThread),
+    API_IMPL(CreateEvent),
+    API_IMPL(CreateEventAsSocket),
+    API_IMPL(GetCurrentThreadId),
+    API_IMPL(WaitForSingleObject),
+    API_IMPL(WaitForAnySocketObject),
+    API_IMPL(CloseHandle),
+    API_IMPL(SetThreadPriority),
+    API_IMPL(SetEvent),
+    API_IMPL(ResetEvent),
+    API_IMPL(SWELL_CreateProcessFromPID),
+    API_IMPL(SWELL_CreateProcess),
+    API_IMPL(SWELL_GetProcessExitCode),
     API_IMPL(LoadLibraryGlobals),
     API_IMPL(LoadLibrary),
     API_IMPL(GetProcAddress),
@@ -506,8 +527,8 @@ ApiEntry kApiTable[] = {
     API_STUB(SWELL_ChooseColor),
     API_STUB(SWELL_ChooseFont),
     API_IMPL(IsWindowEnabled),
-    API_STUB(GetClassName),
-    API_STUB(SWELL_SetClassName),
+    API_IMPL(GetClassName),
+    API_IMPL(SWELL_SetClassName),
     API_STUB(SWELL_DisableContextMenu),
     API_STUB(EnumDisplayMonitors),
     API_STUB(GetMonitorInfo),
