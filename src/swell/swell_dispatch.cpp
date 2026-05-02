@@ -110,6 +110,18 @@ BOOL SetDlgItemInt(HWND hwnd, int idx, int val, int issigned);
 int GetDlgItemInt(HWND hwnd, int idx, BOOL* translated, int issigned);
 BOOL GetClassName(HWND hwnd, char* buf, int maxlen);
 void SWELL_SetClassName(HWND hwnd, const char* name);
+
+int MessageBox(HWND hwnd, const char* text, const char* title, int flags);
+BOOL AddMenuItem(HMENU menu, int pos, int flags, int id, const char* text);
+HFONT CreateFont(int height, int width, int escapement, int orientation, int weight, DWORD italic, DWORD underline, DWORD strikeout, DWORD charset, DWORD outprecision, DWORD clipprecision, DWORD quality, DWORD pitchandfamily, const char* face);
+COLORREF SetTextColor(HDC hdc, COLORREF color);
+COLORREF SetBkColor(HDC hdc, COLORREF color);
+BOOL RoundRect(HDC hdc, int x1, int y1, int x2, int y2, int x3, int y3);
+HBITMAP CreateBitmap(int width, int height, UINT planes, UINT bitcount, const void* bits);
+HDC GetDC(HWND hwnd);
+HDC GetWindowDC(HWND hwnd);
+BOOL ReleaseDC(HWND hwnd, HDC hdc);
+
 HANDLE CreateThread(void* TA, DWORD stackSize, DWORD (*ThreadProc)(LPVOID), LPVOID parm, DWORD cf, DWORD* tidOut);
 HANDLE CreateEvent(void* SA, BOOL manualReset, BOOL initialSig, const char* ignored);
 HANDLE CreateEventAsSocket(void* SA, BOOL manualReset, BOOL initialSig, const char* ignored);
@@ -334,6 +346,7 @@ ApiEntry kApiTable[] = {
     API_STUB(SWELL_ModalWindowRun),
     API_STUB(SWELL_ModalWindowEnd),
     API_IMPL(SWELL_CloseWindow),
+    API_IMPL(MessageBox),
     API_IMPL(CreatePopupMenu),
     API_IMPL(CreatePopupMenuEx),
     API_IMPL(DestroyMenu),
@@ -424,6 +437,7 @@ ApiEntry kApiTable[] = {
     API_STUB(SWELL_SetClipRegion),
     API_STUB(SWELL_PopClipRegion),
     API_STUB(CreateFontIndirect),
+    API_IMPL(CreateFont),
     API_STUB(CreatePen),
     API_STUB(CreateSolidBrush),
     API_STUB(CreatePenAlpha),
@@ -440,7 +454,9 @@ ApiEntry kApiTable[] = {
     API_STUB(SetPixel),
     API_STUB(PolyBezierTo),
     API_STUB(SWELL_DrawText),
+    API_IMPL(SetTextColor),
     API_STUB(GetTextColor),
+    API_IMPL(SetBkColor),
     API_STUB(SetBkMode),
     API_STUB(GetGlyphIndicesW),
     API_STUB(PolyPolyline),
@@ -451,6 +467,7 @@ ApiEntry kApiTable[] = {
     API_STUB(LoadNamedImage),
     API_STUB(DrawImageInRect),
     API_STUB(BitBlt),
+    API_IMPL(CreateBitmap),
     API_STUB(StretchBlt),
     API_STUB(StretchBltFromMem),
     API_STUB(SWELL_GetScaling256),
@@ -463,8 +480,9 @@ ApiEntry kApiTable[] = {
     API_STUB(SWELL_SetGLContextToView),
     API_STUB(BeginPaint),
     API_STUB(EndPaint),
-    API_STUB(GetWindowDC),
-    API_STUB(ReleaseDC),
+    API_IMPL(GetWindowDC),
+    API_IMPL(ReleaseDC),
+    API_IMPL(GetDC),
     API_STUB(SWELL_FillDialogBackground),
     API_STUB(SWELL_CloneGDIObject),
     API_STUB(GetSystemMetrics),
@@ -517,6 +535,7 @@ ApiEntry kApiTable[] = {
     API_IMPL(SendDlgItemMessageA),
     API_IMPL(SendDlgItemMessage),
     API_IMPL(AppendMenu),
+    API_IMPL(AddMenuItem),
     API_IMPL(TrackPopupMenuEx),
     API_IMPL(SWELL_Menu_AddMenuItem),
     API_STUB(SWELL_IsGroupBox),

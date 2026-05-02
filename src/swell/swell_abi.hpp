@@ -30,6 +30,8 @@ using HGDIOBJ = void*;
 using HCURSOR = void*;
 using HDROP = void*;
 using HRGN = void*;
+using HFONT = void*;
+using HBITMAP = void*;
 
 struct POINT {
     LONG x;
